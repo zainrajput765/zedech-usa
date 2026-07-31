@@ -1,0 +1,216 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  FREE_SHIPPING
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  name                 String
+  passwordHash         String
+  role                 Role           @default(CUSTOMER)
+  isEmailVerified      Boolean        @default(false)
+  verificationToken    String?
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  loyaltyPoints        Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  addresses            Address[]
+  orders               Order[]
+  reviews              Review[]
+  notifications        Notification[]
+
+  @@index([email])
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String   // "shipping" or "billing"
+  name         String
+  street       String
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  phone        String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  image     String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+model Product {
+  id             String      @id @default(uuid())
+  name           String
+  slug           String      @unique
+  description    String
+  price          Float
+  originalPrice  Float?      // for strike-through discount pricing
+  categoryId     String
+  category       Category    @relation(fields: [categoryId], references: [id])
+  brand          String
+  sku            String      @unique
+  countInStock   Int         @default(0)
+  images         String[]    // array of image URLs
+  colors         String[]    // available color tags
+  sizes          String[]    // available size tags
+  videoUrl       String?
+  ratings        Float       @default(0.0)
+  numReviews     Int         @default(0)
+  isFeatured     Boolean     @default(false)
+  isNew          Boolean     @default(false)
+  isBestSeller   Boolean     @default(false)
+  isTrending     Boolean     @default(false)
+  tags           String[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  orderItems     OrderItem[]
+  reviews        Review[]
+
+  @@index([slug])
+  @@index([categoryId])
+}
+
+model Order {
+  id                    String        @id @default(uuid())
+  userId                String
+  user                  User          @relation(fields: [userId], references: [id])
+  orderItems            OrderItem[]
+  shippingAddress       Json          // snapshotted address object
+  billingAddress        Json          // snapshotted address object
+  shippingMethod        String
+  paymentMethod         String        // "stripe", "paypal", "apple_pay", "card" etc.
+  paymentStatus         PaymentStatus @default(PENDING)
+  orderStatus           OrderStatus   @default(PENDING)
+  itemsPrice            Float
+  shippingPrice         Float
+  taxPrice              Float
+  discountPrice         Float         @default(0.0)
+  totalPrice            Float
+  stripePaymentIntentId String?       @unique
+  couponCode            String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  quantity  Int
+  price     Float
+  color     String?
+  size      String?
+  image     String?
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Coupon {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  expiryDate    DateTime
+  maxUses       Int?
+  usedCount     Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([code])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String
+  title     String?
+  images    String[] // review photo uploads
+  helpful   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model CMSSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique // "homepage_banner", "promotions", "faqs", etc.
+  value     Json     // content structure depending on key
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
