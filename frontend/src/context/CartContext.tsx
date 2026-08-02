@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -74,6 +75,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [activeToast, setActiveToast] = useState<{
+    id: string;
+    name: string;
+    image: string;
+    price: number;
+  } | null>(null);
 
   // Load from local storage
   useEffect(() => {
@@ -87,6 +94,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     if (savedWishlist) setWishlistItems(JSON.parse(savedWishlist));
     if (savedCoupon) setCoupon(JSON.parse(savedCoupon));
   }, []);
+
+  // Auto dismiss toast after 3 seconds
+  useEffect(() => {
+    if (activeToast) {
+      const timer = setTimeout(() => {
+        setActiveToast(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeToast]);
 
   // Save to local storage helpers
   const saveCart = (items: CartItem[]) => {
@@ -123,6 +140,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       saveCart([...cartItems, { ...item, quantity: qty }]);
     }
+
+    // Trigger toast notification
+    setActiveToast({
+      id: Math.random().toString(36).substring(2, 9),
+      name: item.name,
+      image: item.image,
+      price: item.price,
+    });
   };
 
   const removeFromCart = (productId: string, color: string, size: string) => {
@@ -280,6 +305,37 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {children}
+      <AnimatePresence>
+        {activeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -15, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="fixed top-6 right-6 z-[9999] max-w-sm w-[340px] bg-background/95 backdrop-blur border border-border shadow-2xl rounded-2xl p-4 flex gap-3.5 items-center justify-between"
+          >
+            <div className="flex gap-3 items-center min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden flex-shrink-0 border border-border">
+                <img src={activeToast.image} alt={activeToast.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-green-600 bg-green-500/10 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                  ✓ Added to Cart
+                </span>
+                <h4 className="text-xs font-bold text-foreground truncate">{activeToast.name}</h4>
+                <p className="text-[10px] text-muted-foreground mt-0.5 font-semibold">${activeToast.price.toFixed(2)}</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setActiveToast(null)}
+              className="text-[10px] font-extrabold uppercase bg-foreground text-background px-3 py-2 rounded-lg hover:bg-neutral-800 transition-colors flex-shrink-0 cursor-pointer"
+            >
+              Okay
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </CartContext.Provider>
   );
 };

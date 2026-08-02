@@ -40,9 +40,15 @@ function ShopContent() {
   // Filter states
   const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS);
   const [categories, setCategories] = useState<any[]>(MOCK_CATEGORIES);
-  const [brands, setBrands] = useState<string[]>(['Nike', 'Apple', 'Zara']);
-  const [colors, setColors] = useState<string[]>(['Neon Red', 'Stealth Black', 'Charcoal Gray', 'White', 'Space Gray', 'Silver', 'Gold', 'Camel Brown', 'Cognac Brown', 'Midnight Black']);
-  const [sizes, setSizes] = useState<string[]>(['US 8', 'US 9', 'US 10', 'S', 'M', 'L', 'One Size', '45mm']);
+  const [brands, setBrands] = useState<string[]>(
+    Array.from(new Set(MOCK_PRODUCTS.map((p) => p.brand).filter(Boolean)))
+  );
+  const [colors, setColors] = useState<string[]>(
+    Array.from(new Set(MOCK_PRODUCTS.flatMap((p) => p.colors || []).filter(Boolean)))
+  );
+  const [sizes, setSizes] = useState<string[]>(
+    Array.from(new Set(MOCK_PRODUCTS.flatMap((p) => p.sizes || []).filter(Boolean)))
+  );
 
   // Active filters
   const [activeCategory, setActiveCategory] = useState(initialCategory);

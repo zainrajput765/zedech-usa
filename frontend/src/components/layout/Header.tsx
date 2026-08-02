@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import {
@@ -199,9 +200,15 @@ export default function Header() {
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-foreground text-background text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center scale-90">
+                <motion.span
+                  key={cartCount}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+                  className="absolute top-0.5 right-0.5 bg-foreground text-background text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center scale-90"
+                >
                   {cartCount}
-                </span>
+                </motion.span>
               )}
             </button>
 
