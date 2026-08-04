@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCurrency, CurrencyCode } from '../../context/CurrencyContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Mail, ArrowRight, Sun, Moon, Globe, Shield, RefreshCw } from 'lucide-react';
+import Logo from './Logo';
 
 export default function Footer() {
   const { currency, setCurrency } = useCurrency();
@@ -27,8 +28,9 @@ export default function Footer() {
         
         {/* Brand column */}
         <div className="md:col-span-2 space-y-6">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
-            ZEDECH
+          <Link href="/" className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
+            <Logo className="w-8 h-8" />
+            <span>ZEDECH</span>
           </Link>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
             Crafting minimal, luxury athletic wear and high-fidelity electronics. Built upon the principles of clean design, user-centered experience, and robust durability.

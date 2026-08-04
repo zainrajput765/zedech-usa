@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import Logo from './Logo';
 import {
   Search,
   ShoppingCart,
@@ -96,8 +97,9 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold tracking-tight flex-shrink-0 flex items-center gap-1.5">
-            ZEDECH
+          <Link href="/" className="text-xl font-bold tracking-tight flex-shrink-0 flex items-center gap-2">
+            <Logo className="w-6 h-6" />
+            <span>ZEDECH</span>
           </Link>
 
           {/* Navigation Mega Menu (Desktop) */}
