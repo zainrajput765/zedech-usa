@@ -98,7 +98,7 @@ export default function Header() {
           
           {/* Logo */}
           <Link href="/" className="text-xl font-bold tracking-tight flex-shrink-0 flex items-center gap-2">
-            <Logo className="w-6 h-6" />
+            <Logo className="w-8 h-8" />
             <span>ZEDECH</span>
           </Link>
 

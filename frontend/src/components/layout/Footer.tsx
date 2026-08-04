@@ -29,7 +29,7 @@ export default function Footer() {
         {/* Brand column */}
         <div className="md:col-span-2 space-y-6">
           <Link href="/" className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
-            <Logo className="w-8 h-8" />
+            <Logo className="w-10 h-10" />
             <span>ZEDECH</span>
           </Link>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
