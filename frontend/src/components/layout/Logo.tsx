@@ -2,13 +2,13 @@ import React from 'react';
 
 export default function Logo({ className = 'w-6 h-6' }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="340 95 512 520" className={className}>
-      {/* Diamond backing with round corners and subtle border */}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="300 35 592 640" className={className}>
+      {/* Hexagonal backing with thick borders, fully containing the logo */}
       <polygon 
-        points="596,110 836,350 596,590 356,350" 
+        points="596,50 872,200 872,510 596,660 320,510 320,200" 
         fill="#0d1117" 
         stroke="#30363d" 
-        strokeWidth="12" 
+        strokeWidth="16" 
         strokeLinejoin="round"
       />
       {/* Center original logo image */}
