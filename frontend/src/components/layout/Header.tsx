@@ -198,7 +198,20 @@ export default function Header() {
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors relative"
               aria-label="Shopping Cart"
             >
-              <ShoppingCart className="w-5 h-5" />
+              <motion.div
+                animate={cartCount > 0 ? {
+                  rotate: [0, -8, 8, -8, 8, 0],
+                  scale: [1, 1.05, 1.05, 1.05, 1.05, 1],
+                } : {}}
+                transition={cartCount > 0 ? {
+                  duration: 0.6,
+                  repeat: Infinity,
+                  repeatDelay: 4,
+                  ease: 'easeInOut',
+                } : {}}
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </motion.div>
               {cartCount > 0 && (
                 <motion.span
                   key={cartCount}
