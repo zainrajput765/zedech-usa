@@ -11,6 +11,7 @@ function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailParam = searchParams.get('email') || '';
+  const redirect = searchParams.get('redirect') || '/';
 
   const { verifyEmail } = useAuth();
   const [email, setEmail] = useState(emailParam);
@@ -35,9 +36,9 @@ function VerifyEmailContent() {
     setLoading(false);
 
     if (res.success) {
-      setSuccessMsg('Email verified successfully! Loading profile...');
+      setSuccessMsg('Email verified successfully! Redirecting...');
       setTimeout(() => {
-        router.push('/profile');
+        router.push(redirect);
       }, 1500);
     } else {
       setErrorMsg(res.message || 'Invalid verification code.');

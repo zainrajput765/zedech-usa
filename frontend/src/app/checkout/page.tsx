@@ -14,10 +14,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, coupon, itemsPrice, shippingPrice, taxPrice, discountPrice, totalPrice, clearCart } = useCart();
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, loading, isAuthenticated } = useAuth();
   const { formatPrice } = useCurrency();
 
-  const [loading, setLoading] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   // Form states
@@ -36,7 +36,14 @@ export default function CheckoutPage() {
   const [cardCvv, setCardCvv] = useState('');
   const [cardName, setCardName] = useState('');
 
-  // Pre-fill user details if logged in
+  // 1. Enforce authentication. Redirect to login if checked and not logged in.
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // 2. Pre-fill user details if logged in
   useEffect(() => {
     if (isAuthenticated && user) {
       setEmail(user.email);
@@ -93,7 +100,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (cartItems.length === 0) return;
 
-    setLoading(true);
+    setLoadingOrder(true);
     setErrorMessage('');
 
     const shippingAddress = {
@@ -123,48 +130,14 @@ export default function CheckoutPage() {
     };
 
     try {
-      let res;
-      if (isAuthenticated) {
-        res = await fetch(`${API_URL}/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        // Guest checkout simulation
-        console.log('[Guest Checkout] Submitting Order');
-        res = await fetch(`${API_URL}/auth/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: shippingName,
-            email,
-            password: 'GuestPassword123!', // create a dummy account for guest tracking
-          }),
-        });
-
-        const guestData = await res.json();
-        
-        // Log in guest
-        const loginRes = await fetch(`${API_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password: 'GuestPassword123!' }),
-        });
-        const loginData = await loginRes.json();
-
-        res = await fetch(`${API_URL}/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${loginData.token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-      }
+      const res = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const orderData = await res.json();
       if (orderData.success) {
@@ -182,9 +155,17 @@ export default function CheckoutPage() {
         router.push(`/order-success?orderId=mock_order_${Math.floor(Math.random() * 1000000)}`);
       }, 1500);
     } finally {
-      setLoading(false);
+      setLoadingOrder(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -201,22 +182,17 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Step 1: Contact Details */}
+            {/* Step 1: Account Details */}
             <div className="p-6 border border-border rounded-2xl bg-card space-y-4 shadow-sm">
-              <h3 className="font-bold text-sm tracking-tight border-b border-border pb-3">1. Contact Details</h3>
+              <h3 className="font-bold text-sm tracking-tight border-b border-border pb-3">1. Account Details</h3>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Email Address</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  required
-                  disabled={isAuthenticated}
-                />
-                {!isAuthenticated && (
-                  <p className="text-[10px] text-muted-foreground">An account will be created automatically to track this order.</p>
-                )}
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Logged In As</label>
+                <div className="text-xs font-semibold text-foreground bg-muted/30 px-3.5 py-2.5 rounded-xl border border-border flex items-center justify-between">
+                  <span>{user?.name} ({user?.email})</span>
+                  <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider bg-green-500/10 px-2.5 py-0.5 rounded-full">
+                    Verified Account
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -414,10 +390,10 @@ export default function CheckoutPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loadingOrder}
                 className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-bold py-3.5 rounded-xl hover:bg-neutral-800 disabled:opacity-50 transition-all text-xs shadow-lg shadow-black/5"
               >
-                {loading ? (
+                {loadingOrder ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Authorizing Payment...
                   </>
