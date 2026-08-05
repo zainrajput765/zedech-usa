@@ -42,3 +42,22 @@ export const validateCoupon = async (req: Request, res: Response, next: NextFunc
     next(error);
   }
 };
+
+export const getActiveCoupons = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        expiryDate: { gte: new Date() }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json({
+      success: true,
+      coupons
+    });
+  } catch (error) {
+    next(error);
+  }
+};

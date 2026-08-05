@@ -26,7 +26,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 export default function Header() {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
-  const { cartItems, wishlistItems } = useCart();
+  const { cartItems, wishlistItems, applyCouponCode } = useCart();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
@@ -34,6 +34,31 @@ export default function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  // Announcement notification banner for auto-applied coupon from ad click
+  const [adCouponNotification, setAdCouponNotification] = useState<string | null>(null);
+
+  // Auto-apply coupon from URL search parameter (e.g. ad redirection ?coupon=WELCOME10)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlCoupon = params.get('coupon');
+      if (urlCoupon) {
+        applyCouponCode(urlCoupon).then((success) => {
+          if (success) {
+            setAdCouponNotification(urlCoupon.toUpperCase());
+            // Clear URL param to prevent repeated alerts on refresh
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+            
+            setTimeout(() => {
+              setAdCouponNotification(null);
+            }, 6000);
+          }
+        });
+      }
+    }
+  }, [applyCouponCode]);
 
   // Mega Menu dynamic categories and products
   const [categories, setCategories] = useState<any[]>([]);
@@ -129,6 +154,19 @@ export default function Header() {
 
   return (
     <>
+      {adCouponNotification && (
+        <div className="bg-foreground text-background text-center py-2.5 px-4 text-xs font-bold flex justify-between items-center z-50 animate-in slide-in-from-top duration-300 relative border-b border-border">
+          <span className="mx-auto flex items-center gap-1.5 font-bold">
+            🎉 Promo Code <span className="underline decoration-wavy decoration-indigo-400 font-extrabold">{adCouponNotification}</span> applied automatically from ad! Enjoy your discount.
+          </span>
+          <button 
+            onClick={() => setAdCouponNotification(null)}
+            className="text-[10px] uppercase tracking-wider font-extrabold opacity-75 hover:opacity-100 cursor-pointer absolute right-4"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 left-0 w-full z-40 glass-nav transition-all duration-200">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           

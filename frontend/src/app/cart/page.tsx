@@ -8,6 +8,8 @@ import { useCart } from '../../context/CartContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Trash2, Plus, Minus, Tag, ArrowRight, Bookmark, ArrowLeft } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 export default function CartPage() {
   const {
     cartItems,
@@ -31,6 +33,23 @@ export default function CartPage() {
   const { formatPrice } = useCurrency();
   const [couponInput, setCouponInput] = useState('');
   const [loadingCoupon, setLoadingCoupon] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+
+  // Load available coupons on mount
+  React.useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await fetch(`${API_URL}/coupons`);
+        const data = await res.json();
+        if (data.success) {
+          setAvailableCoupons(data.coupons || []);
+        }
+      } catch (err) {
+        console.error('Error fetching store coupons', err);
+      }
+    };
+    fetchCoupons();
+  }, []);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,6 +251,40 @@ export default function CartPage() {
                 </form>
               )}
               {couponError && <p className="text-xs text-red-500 font-medium px-1">{couponError}</p>}
+
+              {/* Available Coupons list */}
+              {availableCoupons.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Available Store Coupons</h4>
+                  <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    {availableCoupons.map((c) => {
+                      const isFinished = c.maxUses && c.usedCount >= c.maxUses;
+                      return (
+                        <div 
+                          key={c.id} 
+                          className={`p-2.5 border rounded-xl flex items-center justify-between text-xs transition-all ${isFinished ? 'bg-muted/30 border-border/40 opacity-60' : 'bg-background border-border hover:border-foreground/20'}`}
+                        >
+                          <div className="min-w-0">
+                            <span className="font-extrabold text-foreground tracking-tight">{c.code}</span>
+                            <p className="text-[9px] text-muted-foreground mt-0.5">
+                              {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% Off` : `$${c.discountValue} Off`}
+                              {c.maxUses && ` • Limit: ${c.usedCount}/${c.maxUses}`}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isFinished || (coupon?.code === c.code)}
+                            onClick={() => applyCouponCode(c.code)}
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${isFinished ? 'border-transparent text-muted-foreground bg-muted/60' : (coupon?.code === c.code) ? 'border-transparent text-green-600 bg-green-500/10' : 'border-foreground text-foreground hover:bg-foreground hover:text-background'}`}
+                          >
+                            {isFinished ? 'Ended' : (coupon?.code === c.code) ? 'Applied' : 'Claim'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Price Breakdown */}
               <div className="space-y-3.5 text-xs pt-2">
