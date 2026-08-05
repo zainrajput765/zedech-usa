@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../models/db';
 import { AppError } from '../middlewares/errorHandler';
 import { PaymentStatus, OrderStatus, Role, DiscountType } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -396,6 +398,45 @@ export const adminCreateCategory = async (req: Request, res: Response, next: Nex
     res.status(201).json({
       success: true,
       category,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminUploadImage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { base64Image } = req.body;
+    if (!base64Image) {
+      return next(new AppError('No image base64 data provided', 400));
+    }
+
+    // Split base64 header from content
+    const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return next(new AppError('Invalid base64 string format', 400));
+    }
+
+    const imageBuffer = Buffer.from(matches[2], 'base64');
+    const ext = matches[1].split('/')[1] || 'png';
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${ext}`;
+
+    const publicDir = path.join(process.cwd(), 'public');
+    const uploadsDir = path.join(publicDir, 'uploads');
+
+    if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+
+    const filePath = path.join(uploadsDir, safeFileName);
+    fs.writeFileSync(filePath, imageBuffer);
+
+    // Return URL of uploaded file
+    const port = process.env.PORT || 5000;
+    const fileUrl = `http://localhost:${port}/uploads/${safeFileName}`;
+
+    res.status(200).json({
+      success: true,
+      url: fileUrl,
     });
   } catch (error) {
     next(error);

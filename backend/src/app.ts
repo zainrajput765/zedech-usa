@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,9 @@ import adminRoutes from './routes/admin';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Serve uploaded images statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // 1. Security & CORS Middlewares
 app.use(helmet());

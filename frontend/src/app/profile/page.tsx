@@ -53,6 +53,66 @@ function ProfileContent() {
   const [addrPhone, setAddrPhone] = useState('');
   const [addrDefault, setAddrDefault] = useState(false);
 
+  // Nominatim address geocoding suggestions states
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showAddressDropdown, setShowAddressDropdown] = useState(false);
+
+  // OSM Nominatim address query lookup
+  useEffect(() => {
+    if (addrStreet.trim().length < 4) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addrStreet)}&format=json&addressdetails=1&limit=5`,
+          {
+            headers: {
+              'Accept-Language': 'en'
+            }
+          }
+        );
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAddressSuggestions(data);
+          setShowAddressDropdown(true);
+        }
+      } catch (err) {
+        console.error('Error fetching address suggestions', err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [addrStreet]);
+
+  const handleSelectAddress = (suggestion: any) => {
+    const addr = suggestion.address;
+    
+    // Construct street address
+    const houseNumber = addr.house_number || '';
+    const road = addr.road || addr.pedestrian || addr.suburb || '';
+    const streetName = houseNumber ? `${houseNumber} ${road}` : road;
+    
+    setAddrStreet(streetName || suggestion.display_name.split(',')[0]);
+    
+    // City
+    const cityName = addr.city || addr.town || addr.village || addr.municipality || '';
+    setAddrCity(cityName);
+    
+    // State
+    const stateName = addr.state || addr.region || '';
+    setAddrState(stateName);
+    
+    // Zip
+    const zipCode = addr.postcode || '';
+    setAddrZip(zipCode);
+
+    setShowAddressDropdown(false);
+    setAddressSuggestions([]);
+  };
+
   // Orders State
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -442,9 +502,35 @@ Thank you for shopping with Zedech!
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Receiver Name</label>
                       <input type="text" value={addrName} onChange={(e) => setAddrName(e.target.value)} className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs" required />
                     </div>
-                    <div className="space-y-1 sm:col-span-2">
+                    <div className="space-y-1 sm:col-span-2 relative">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Street Address</label>
-                      <input type="text" value={addrStreet} onChange={(e) => setAddrStreet(e.target.value)} className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs" required />
+                      <input 
+                        type="text" 
+                        placeholder="Type address to search..."
+                        value={addrStreet} 
+                        onChange={(e) => {
+                          setAddrStreet(e.target.value);
+                          setShowAddressDropdown(true);
+                        }} 
+                        className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-ring" 
+                        required 
+                      />
+
+                      {/* Autocomplete suggestions dropdown */}
+                      {showAddressDropdown && addressSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 w-full mt-1.5 bg-background border border-border rounded-xl shadow-xl overflow-hidden z-50 max-h-48 overflow-y-auto">
+                          {addressSuggestions.map((item, index) => (
+                            <button
+                              type="button"
+                              key={index}
+                              onClick={() => handleSelectAddress(item)}
+                              className="w-full text-left px-4 py-2 hover:bg-muted text-[11px] font-medium text-foreground transition-colors border-b border-border last:border-0 cursor-pointer block truncate"
+                            >
+                              {item.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">City</label>

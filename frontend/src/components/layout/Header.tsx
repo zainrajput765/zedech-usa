@@ -35,6 +35,42 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
+  // Mega Menu dynamic categories and products
+  const [categories, setCategories] = useState<any[]>([]);
+  const [productsByCategory, setProductsByCategory] = useState<{ [key: string]: any[] }>({});
+
+  // Fetch mega menu data
+  useEffect(() => {
+    const fetchMegaMenuData = async () => {
+      try {
+        const catRes = await fetch(`${API_URL}/products/categories`);
+        const catData = await catRes.json();
+        if (catData.success) {
+          setCategories(catData.categories);
+        }
+
+        const prodRes = await fetch(`${API_URL}/products?limit=100`);
+        const prodData = await prodRes.json();
+        if (prodData.success) {
+          const grouped: { [key: string]: any[] } = {};
+          prodData.products.forEach((p: any) => {
+            const catId = p.categoryId;
+            if (!grouped[catId]) {
+              grouped[catId] = [];
+            }
+            if (grouped[catId].length < 3) {
+              grouped[catId].push(p);
+            }
+          });
+          setProductsByCategory(grouped);
+        }
+      } catch (err) {
+        console.error('Error fetching mega menu data', err);
+      }
+    };
+    fetchMegaMenuData();
+  }, []);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -113,17 +149,39 @@ export default function Header() {
               </button>
               
               {/* Dropdown panel */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[420px] bg-background border border-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 p-5 grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Lifestyle</h4>
-                  <Link href="/shop?category=apparel" className="block text-sm font-medium hover:text-muted-foreground transition-colors">Apparel & Coats</Link>
-                  <Link href="/shop?category=accessories" className="block text-sm font-medium hover:text-muted-foreground transition-colors">Leather Accessories</Link>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Performance</h4>
-                  <Link href="/shop?category=footwear" className="block text-sm font-medium hover:text-muted-foreground transition-colors">Athletic Footwear</Link>
-                  <Link href="/shop?category=electronics" className="block text-sm font-medium hover:text-muted-foreground transition-colors">Smart Audio & Tech</Link>
-                </div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[600px] bg-background border border-border rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 p-6 grid grid-cols-3 gap-6 z-50">
+                {categories.length === 0 ? (
+                  <p className="text-xs text-muted-foreground col-span-3 text-center py-4">Loading categories...</p>
+                ) : (
+                  categories.slice(0, 6).map((cat) => {
+                    const prods = productsByCategory[cat.id] || [];
+                    return (
+                      <div key={cat.id} className="space-y-2">
+                        <Link 
+                          href={`/shop?category=${cat.slug}`} 
+                          className="block text-[11px] font-bold text-foreground hover:text-primary uppercase tracking-wider border-b border-border pb-1"
+                        >
+                          {cat.name}
+                        </Link>
+                        <div className="space-y-1.5 pt-1">
+                          {prods.length === 0 ? (
+                            <p className="text-[10px] text-muted-foreground italic">No products available</p>
+                          ) : (
+                            prods.map((prod) => (
+                              <Link
+                                key={prod.id}
+                                href={`/product/${prod.slug}`}
+                                className="block text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors truncate"
+                              >
+                                {prod.name}
+                              </Link>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 

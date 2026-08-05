@@ -662,10 +662,58 @@ export default function AdminPage() {
                       <button
                         type="button"
                         onClick={() => setProdImages([...prodImages, ''])}
-                        className="text-[10px] text-primary font-bold hover:underline mt-1 cursor-pointer"
+                        className="text-[10px] text-primary font-bold hover:underline mt-1 cursor-pointer mr-4"
                       >
                         + Add Image URL
                       </button>
+
+                      {/* File upload input & button */}
+                      <label 
+                        className="text-[10px] text-indigo-500 font-bold hover:underline mt-1 cursor-pointer inline-flex items-center gap-1"
+                      >
+                        + Upload Image File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            
+                            const reader = new FileReader();
+                            reader.onloadend = async () => {
+                              const base64 = reader.result as string;
+                              try {
+                                const res = await fetch(`${API_URL}/admin/upload`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({ base64Image: base64 })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  // Add URL to prodImages array
+                                  const currentImgs = [...prodImages];
+                                  if (currentImgs[currentImgs.length - 1] === '') {
+                                    currentImgs[currentImgs.length - 1] = data.url;
+                                    setProdImages(currentImgs);
+                                  } else {
+                                    setProdImages([...prodImages, data.url]);
+                                  }
+                                } else {
+                                  alert('Upload failed: ' + (data.message || 'Unknown error'));
+                                }
+                              } catch (err) {
+                                console.error('Upload error', err);
+                                alert('Error uploading local file to backend.');
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                     <div className="space-y-1 sm:col-span-2">
                       <label className="text-xs font-bold text-muted-foreground uppercase block">Description</label>

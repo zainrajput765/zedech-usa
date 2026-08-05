@@ -13,6 +13,7 @@ import {
   adminDeleteCoupon,
   adminUpdateCMSSetting,
   adminCreateCategory,
+  adminUploadImage,
 } from '../controllers/adminController';
 import { protect, admin } from '../middlewares/auth';
 
@@ -31,6 +32,9 @@ router.delete('/products/:id', adminDeleteProduct);
 
 // Category Admin
 router.post('/categories', adminCreateCategory);
+
+// Image File Upload API
+router.post('/upload', adminUploadImage);
 
 // Order Admin
 router.get('/orders', adminGetOrders);
