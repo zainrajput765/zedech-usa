@@ -51,8 +51,14 @@ export default function AdminPage() {
 
   // Products CRUD State
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  // Category inline creator states
+  const [showAddCategoryInput, setShowAddCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   // Product Form State
   const [prodName, setProdName] = useState('');
@@ -61,9 +67,15 @@ export default function AdminPage() {
   const [prodSku, setProdSku] = useState('');
   const [prodBrand, setProdBrand] = useState('');
   const [prodStock, setProdStock] = useState('');
-  const [prodCategory, setProdCategory] = useState('1');
+  const [prodCategory, setProdCategory] = useState('');
   const [prodDesc, setProdDesc] = useState('');
-  const [prodImage, setProdImage] = useState('');
+  const [prodImages, setProdImages] = useState<string[]>(['']);
+
+  // Shipment Details Modal States
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [shippingOrder, setShippingOrder] = useState<any>(null);
+  const [shipCarrier, setShipCarrier] = useState('FedEx');
+  const [shipTracking, setShipTracking] = useState('');
 
   // Orders Admin State
   const [orders, setOrders] = useState<any[]>([]);
@@ -115,6 +127,12 @@ export default function AdminPage() {
           const data = await res.json();
           if (data.success) {
             setProducts(data.products);
+          }
+
+          const catRes = await fetch(`${API_URL}/products/categories`);
+          const catData = await catRes.json();
+          if (catData.success) {
+            setCategories(catData.categories);
           }
         }
 
@@ -168,9 +186,9 @@ export default function AdminPage() {
     setProdSku('');
     setProdBrand('');
     setProdStock('');
-    setProdCategory(MOCK_CATEGORIES[0].id);
+    setProdCategory(categories[0]?.id || '');
     setProdDesc('');
-    setProdImage('https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600');
+    setProdImages(['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600']);
     setShowProductModal(true);
   };
 
@@ -184,7 +202,7 @@ export default function AdminPage() {
     setProdStock(prod.countInStock.toString());
     setProdCategory(prod.categoryId);
     setProdDesc(prod.description);
-    setProdImage(prod.images[0]);
+    setProdImages(prod.images && prod.images.length > 0 ? prod.images : ['']);
     setShowProductModal(true);
   };
 
@@ -201,7 +219,7 @@ export default function AdminPage() {
       countInStock: Number(prodStock),
       categoryId: prodCategory,
       description: prodDesc,
-      images: [prodImage],
+      images: prodImages.filter(img => img.trim() !== ''),
       colors: ['Default'],
       sizes: ['One Size'],
       tags: [prodBrand.toLowerCase(), 'item'],
@@ -263,7 +281,7 @@ export default function AdminPage() {
 
   // --- Order Actions ---
 
-  const handleUpdateOrderStatus = async (id: string, status: string) => {
+  const handleUpdateOrderStatus = async (id: string, status: string, carrierName?: string, trackingNum?: string) => {
     if (!token) return;
     try {
       const res = await fetch(`${API_URL}/admin/orders/${id}`, {
@@ -272,14 +290,53 @@ export default function AdminPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ orderStatus: status, paymentStatus: status === 'REFUNDED' ? 'REFUNDED' : undefined })
+        body: JSON.stringify({ 
+          orderStatus: status, 
+          paymentStatus: status === 'REFUNDED' ? 'REFUNDED' : undefined,
+          carrier: carrierName,
+          trackingNumber: trackingNum
+        })
       });
       const data = await res.json();
       if (data.success) {
-        setOrders(orders.map(o => o.id === id ? { ...o, orderStatus: status } : o));
+        setOrders(orders.map(o => o.id === id ? { 
+          ...o, 
+          orderStatus: status, 
+          carrier: carrierName || o.carrier, 
+          trackingNumber: trackingNum || o.trackingNumber 
+        } : o));
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleCreateCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName || !token) return;
+    setCreatingCategory(true);
+    try {
+      const res = await fetch(`${API_URL}/admin/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: newCategoryName })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCategories([...categories, data.category]);
+        setProdCategory(data.category.id);
+        setNewCategoryName('');
+        setShowAddCategoryInput(false);
+      } else {
+        alert(data.message || 'Failed to create category');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreatingCategory(false);
     }
   };
 
@@ -530,14 +587,85 @@ export default function AdminPage() {
                       <input type="number" value={prodStock} onChange={(e) => setProdStock(e.target.value)} className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs" required />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-muted-foreground uppercase block">Category</label>
-                      <select value={prodCategory} onChange={(e) => setProdCategory(e.target.value)} className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs">
-                        {MOCK_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-muted-foreground uppercase block">Category</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCategoryInput(!showAddCategoryInput)}
+                          className="text-[10px] text-primary font-bold hover:underline cursor-pointer"
+                        >
+                          {showAddCategoryInput ? 'Cancel' : '+ New Category'}
+                        </button>
+                      </div>
+                      
+                      {!showAddCategoryInput ? (
+                        <select 
+                          value={prodCategory} 
+                          onChange={(e) => setProdCategory(e.target.value)} 
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        >
+                          <option value="" disabled>Select category...</option>
+                          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      ) : (
+                        <div className="flex gap-1.5 items-center">
+                          <input
+                            type="text"
+                            placeholder="Category Name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="flex-1 bg-background border border-border px-2 py-1 rounded-lg text-xs focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCreateCategorySubmit}
+                            disabled={creatingCategory}
+                            className="bg-foreground text-background text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-neutral-800 disabled:opacity-50 cursor-pointer"
+                          >
+                            {creatingCategory ? '...' : 'Create'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1 sm:col-span-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase block">Image URL</label>
-                      <input type="text" value={prodImage} onChange={(e) => setProdImage(e.target.value)} className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs" required />
+                      <label className="text-xs font-bold text-muted-foreground uppercase block">Product Image URLs</label>
+                      <div className="space-y-2">
+                        {prodImages.map((img, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              value={img}
+                              onChange={(e) => {
+                                const newImgs = [...prodImages];
+                                newImgs[idx] = e.target.value;
+                                setProdImages(newImgs);
+                              }}
+                              placeholder="https://images.unsplash.com/photo-..."
+                              className="flex-1 bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                              required
+                            />
+                            {prodImages.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProdImages(prodImages.filter((_, i) => i !== idx));
+                                }}
+                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg text-xs font-bold cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProdImages([...prodImages, ''])}
+                        className="text-[10px] text-primary font-bold hover:underline mt-1 cursor-pointer"
+                      >
+                        + Add Image URL
+                      </button>
                     </div>
                     <div className="space-y-1 sm:col-span-2">
                       <label className="text-xs font-bold text-muted-foreground uppercase block">Description</label>
@@ -614,13 +742,23 @@ export default function AdminPage() {
                           <td className="py-3.5 text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
                           <td className="py-3.5 font-semibold">{formatPrice(o.totalPrice)}</td>
                           <td className="py-3.5">
-                            <span className="px-2.5 py-0.5 rounded text-[9px] font-bold bg-muted text-muted-foreground uppercase">{o.orderStatus}</span>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="px-2.5 py-0.5 rounded text-[9px] font-bold bg-muted text-muted-foreground uppercase">{o.orderStatus}</span>
+                              {o.carrier && o.trackingNumber && (
+                                <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                  {o.carrier}: <span className="font-semibold text-foreground">{o.trackingNumber}</span>
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 text-right space-x-1.5">
                             {o.orderStatus === 'PROCESSING' && (
                               <button
-                                onClick={() => handleUpdateOrderStatus(o.id, 'SHIPPED')}
-                                className="inline-flex items-center gap-1 bg-foreground text-background text-[10px] font-semibold px-2.5 py-1 rounded"
+                                onClick={() => {
+                                  setShippingOrder(o);
+                                  setShowShipModal(true);
+                                }}
+                                className="inline-flex items-center gap-1 bg-foreground text-background text-[10px] font-semibold px-2.5 py-1 rounded cursor-pointer"
                               >
                                 <Truck className="w-3 h-3" /> Ship
                               </button>
@@ -628,7 +766,7 @@ export default function AdminPage() {
                             {o.orderStatus === 'SHIPPED' && (
                               <button
                                 onClick={() => handleUpdateOrderStatus(o.id, 'DELIVERED')}
-                                className="inline-flex items-center gap-1 bg-green-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded"
+                                className="inline-flex items-center gap-1 bg-green-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded cursor-pointer"
                               >
                                 <CheckCircle className="w-3 h-3" /> Deliver
                               </button>
@@ -636,7 +774,7 @@ export default function AdminPage() {
                             {o.orderStatus === 'RETURNED' && (
                               <button
                                 onClick={() => handleUpdateOrderStatus(o.id, 'REFUNDED')}
-                                className="inline-flex items-center gap-1 bg-amber-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded"
+                                className="inline-flex items-center gap-1 bg-amber-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded cursor-pointer"
                               >
                                 <RotateCcw className="w-3 h-3" /> Refund
                               </button>
@@ -724,52 +862,95 @@ export default function AdminPage() {
               <h3 className="font-bold text-lg">Homepage CMS Config</h3>
 
               {cmsHero && (
-                <form onSubmit={handleUpdateCmsHero} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-4 max-w-xl">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground border-b border-border pb-2">Hero Slider Slide 1</h4>
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold block">Slide Title</label>
-                    <input
-                      type="text"
-                      value={cmsHero.slides?.[0]?.title || ''}
-                      onChange={(e) => {
-                        const slides = [...cmsHero.slides];
-                        slides[0].title = e.target.value;
-                        setCmsHero({ ...cmsHero, slides });
+                <form onSubmit={handleUpdateCmsHero} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-6 max-w-xl">
+                  <div className="flex justify-between items-center border-b border-border pb-2">
+                    <h4 className="font-bold text-sm text-foreground">Homepage Hero Slides</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newSlide = {
+                          title: 'New Collection Release',
+                          subtitle: 'Shop the latest premium arrivals.',
+                          backgroundImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200'
+                        };
+                        setCmsHero({
+                          ...cmsHero,
+                          slides: [...(cmsHero.slides || []), newSlide]
+                        });
                       }}
-                      className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs focus:outline-none"
-                    />
+                      className="text-xs text-primary font-bold hover:underline cursor-pointer"
+                    >
+                      + Add Slide
+                    </button>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold block">Slide Subtitle</label>
-                    <input
-                      type="text"
-                      value={cmsHero.slides?.[0]?.subtitle || ''}
-                      onChange={(e) => {
-                        const slides = [...cmsHero.slides];
-                        slides[0].subtitle = e.target.value;
-                        setCmsHero({ ...cmsHero, slides });
-                      }}
-                      className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs focus:outline-none"
-                    />
+                  <div className="space-y-4">
+                    {cmsHero.slides?.map((slide: any, index: number) => (
+                      <div key={index} className="p-4 border border-border rounded-xl space-y-3 bg-muted/10 relative">
+                        <div className="flex justify-between items-center border-b border-border/50 pb-2">
+                          <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Slide {index + 1}</span>
+                          {cmsHero.slides.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const slides = cmsHero.slides.filter((_: any, i: number) => i !== index);
+                                setCmsHero({ ...cmsHero, slides });
+                              }}
+                              className="text-[10px] text-red-500 font-bold hover:underline cursor-pointer"
+                            >
+                              Remove Slide
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Slide Title</label>
+                          <input
+                            type="text"
+                            value={slide.title || ''}
+                            onChange={(e) => {
+                              const slides = [...cmsHero.slides];
+                              slides[index].title = e.target.value;
+                              setCmsHero({ ...cmsHero, slides });
+                            }}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Slide Subtitle</label>
+                          <input
+                            type="text"
+                            value={slide.subtitle || ''}
+                            onChange={(e) => {
+                              const slides = [...cmsHero.slides];
+                              slides[index].subtitle = e.target.value;
+                              setCmsHero({ ...cmsHero, slides });
+                            }}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Background Image URL</label>
+                          <input
+                            type="text"
+                            value={slide.backgroundImage || ''}
+                            onChange={(e) => {
+                              const slides = [...cmsHero.slides];
+                              slides[index].backgroundImage = e.target.value;
+                              setCmsHero({ ...cmsHero, slides });
+                            }}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold block">Background Image URL</label>
-                    <input
-                      type="text"
-                      value={cmsHero.slides?.[0]?.backgroundImage || ''}
-                      onChange={(e) => {
-                        const slides = [...cmsHero.slides];
-                        slides[0].backgroundImage = e.target.value;
-                        setCmsHero({ ...cmsHero, slides });
-                      }}
-                      className="w-full bg-background border border-border px-3.5 py-2 rounded-xl text-xs focus:outline-none"
-                    />
-                  </div>
-
-                  <button type="submit" className="bg-foreground text-background text-xs font-bold px-5 py-2.5 rounded-lg">
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save CMS Hero Config
                   </button>
                 </form>
@@ -779,6 +960,75 @@ export default function AdminPage() {
 
         </section>
       </main>
+
+      {/* Ship Modal Overlay */}
+      {showShipModal && shippingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleUpdateOrderStatus(shippingOrder.id, 'SHIPPED', shipCarrier, shipTracking);
+              setShipTracking('');
+              setShippingOrder(null);
+              setShowShipModal(false);
+            }}
+            className="bg-background border border-border rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4 relative animate-in fade-in zoom-in duration-200"
+          >
+            <div className="text-center space-y-1">
+              <h3 className="text-sm font-bold tracking-tight text-foreground">Dispatch Shipment</h3>
+              <p className="text-[10px] text-muted-foreground">Order: #{shippingOrder.id.substring(0, 8)}</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase block">Carrier Name</label>
+                <select 
+                  value={shipCarrier} 
+                  onChange={(e) => setShipCarrier(e.target.value)} 
+                  className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                >
+                  <option value="FedEx">FedEx</option>
+                  <option value="UPS">UPS</option>
+                  <option value="DHL">DHL</option>
+                  <option value="USPS">USPS</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase block">Tracking Number</label>
+                <input
+                  type="text"
+                  value={shipTracking}
+                  onChange={(e) => setShipTracking(e.target.value)}
+                  placeholder="e.g. 1Z999AA10123456784"
+                  className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 bg-foreground text-background text-xs font-bold py-2 rounded-xl hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                Confirm & Ship
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowShipModal(false);
+                  setShippingOrder(null);
+                }}
+                className="flex-1 bg-muted hover:bg-border text-foreground text-xs font-semibold py-2 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <Footer />
     </>
   );

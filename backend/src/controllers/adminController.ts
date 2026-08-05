@@ -211,7 +211,7 @@ export const adminGetOrders = async (req: Request, res: Response, next: NextFunc
 export const adminUpdateOrderStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { orderStatus, paymentStatus } = req.body;
+    const { orderStatus, paymentStatus, trackingNumber, carrier } = req.body;
 
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return next(new AppError('Order not found', 404));
@@ -221,6 +221,8 @@ export const adminUpdateOrderStatus = async (req: Request, res: Response, next: 
       data: {
         orderStatus: orderStatus || order.orderStatus,
         paymentStatus: paymentStatus || order.paymentStatus,
+        trackingNumber: trackingNumber !== undefined ? trackingNumber : order.trackingNumber,
+        carrier: carrier !== undefined ? carrier : order.carrier,
       },
     });
 
@@ -371,6 +373,29 @@ export const adminUpdateCMSSetting = async (req: Request, res: Response, next: N
     res.status(200).json({
       success: true,
       cms: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminCreateCategory = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { name } = req.body;
+    if (!name) return next(new AppError('Category name is required', 400));
+
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    const categoryExists = await prisma.category.findUnique({ where: { name } });
+    if (categoryExists) return next(new AppError('Category already exists', 400));
+
+    const category = await prisma.category.create({
+      data: { name, slug },
+    });
+
+    res.status(201).json({
+      success: true,
+      category,
     });
   } catch (error) {
     next(error);

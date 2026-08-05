@@ -201,7 +201,7 @@ function ShopContent() {
       <main className="max-w-7xl mx-auto px-6 py-10 flex-1">
         
         {/* Title banner */}
-        <div className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="mb-6 border-b border-border pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Catalogue</h1>
             <p className="text-xs text-muted-foreground mt-1">
@@ -234,6 +234,69 @@ function ShopContent() {
             </button>
           </div>
         </div>
+
+        {/* Active Filters Summary Pills */}
+        {(activeCategory || activeBrand || minPrice || maxPrice || activeRating || activeColor || activeSize) && (
+          <div className="flex flex-wrap items-center gap-2 mb-6 p-3 bg-muted/20 border border-border rounded-xl">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mr-1">Active Filters:</span>
+            
+            {/* Category Pill */}
+            {activeCategory && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Category: {activeCategory}
+                <button onClick={() => setActiveCategory('')} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Brand Pill */}
+            {activeBrand && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Brand: {activeBrand}
+                <button onClick={() => setActiveBrand('')} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Price Pill */}
+            {(minPrice || maxPrice) && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Price: {minPrice ? `$${minPrice}` : '$0'} - {maxPrice ? `$${maxPrice}` : '∞'}
+                <button onClick={() => { setMinPrice(''); setMaxPrice(''); }} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Rating Pill */}
+            {activeRating && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Rating: {activeRating}+ ★
+                <button onClick={() => setActiveRating(null)} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Color Pill */}
+            {activeColor && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Color: {activeColor}
+                <button onClick={() => setActiveColor('')} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Size Pill */}
+            {activeSize && (
+              <span className="inline-flex items-center gap-1 bg-background border border-border px-2.5 py-1 rounded-full text-xs font-semibold text-foreground">
+                Size: {activeSize}
+                <button onClick={() => setActiveSize('')} className="hover:text-red-500 ml-0.5 text-[10px] cursor-pointer">×</button>
+              </span>
+            )}
+
+            {/* Clear All button */}
+            <button
+              onClick={clearAllFilters}
+              className="text-xs text-red-500 hover:text-red-600 font-bold ml-auto px-2 py-1 cursor-pointer"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           

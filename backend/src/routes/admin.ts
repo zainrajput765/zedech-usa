@@ -12,6 +12,7 @@ import {
   adminCreateCoupon,
   adminDeleteCoupon,
   adminUpdateCMSSetting,
+  adminCreateCategory,
 } from '../controllers/adminController';
 import { protect, admin } from '../middlewares/auth';
 
@@ -27,6 +28,9 @@ router.get('/stats', getDashboardStats);
 router.post('/products', adminAddProduct);
 router.put('/products/:id', adminEditProduct);
 router.delete('/products/:id', adminDeleteProduct);
+
+// Category Admin
+router.post('/categories', adminCreateCategory);
 
 // Order Admin
 router.get('/orders', adminGetOrders);
