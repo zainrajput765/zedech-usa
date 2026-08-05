@@ -162,9 +162,47 @@ export default function AdminPage() {
           const heroData = await heroRes.json();
           if (heroData.success) setCmsHero(heroData.value);
 
-          const promoRes = await fetch(`${API_URL}/cms/homepage_promotion`);
-          const promoData = await promoRes.json();
-          if (promoData.success) setCmsPromotion(promoData.value);
+          try {
+            const promoRes = await fetch(`${API_URL}/cms/homepage_promotion`);
+            const promoData = await promoRes.json();
+            if (promoData.success && promoData.value) {
+              setCmsPromotion(promoData.value);
+            } else {
+              setCmsPromotion({
+                card1: {
+                  tag: 'Engineering',
+                  title: 'The Apex Performance Run',
+                  description: 'Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.',
+                  buttonLink: '/product/apex-pro-runner',
+                  backgroundImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'
+                },
+                card2: {
+                  tag: 'Acoustics',
+                  title: 'Studio ANC Comfort',
+                  description: 'Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.',
+                  buttonLink: '/product/studio-max-anc-headphones',
+                  backgroundImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80'
+                }
+              });
+            }
+          } catch (e) {
+            setCmsPromotion({
+              card1: {
+                tag: 'Engineering',
+                title: 'The Apex Performance Run',
+                description: 'Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.',
+                buttonLink: '/product/apex-pro-runner',
+                backgroundImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'
+              },
+              card2: {
+                tag: 'Acoustics',
+                title: 'Studio ANC Comfort',
+                description: 'Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.',
+                buttonLink: '/product/studio-max-anc-headphones',
+                backgroundImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80'
+              }
+            });
+          }
 
           try {
             const couponsConfigRes = await fetch(`${API_URL}/cms/homepage_coupons`);
@@ -443,6 +481,26 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) alert('CMS Coupons visibility settings saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsPromotion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !cmsPromotion) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/homepage_promotion`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsPromotion })
+      });
+      const data = await res.json();
+      if (data.success) alert('CMS homepage promotion cards saved successfully!');
     } catch (err) {
       console.error(err);
     }
@@ -1067,6 +1125,170 @@ export default function AdminPage() {
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save Coupons CMS Config
+                  </button>
+                </form>
+              )}
+
+              {cmsPromotion && (
+                <form onSubmit={handleUpdateCmsPromotion} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-6 max-w-xl mt-6 animate-in fade-in zoom-in duration-200">
+                  <h4 className="font-bold text-sm text-foreground border-b border-border pb-2">Editorial Promotion Cards CMS</h4>
+                  
+                  {/* Card 1 (Left Card) */}
+                  <div className="space-y-4 border-b border-border pb-4">
+                    <span className="font-bold text-xs uppercase tracking-wider text-primary">Left Promotion Card (Card 1)</span>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Tag/Category Banner</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card1?.tag || ''}
+                          onChange={(e) => {
+                            const card1 = { ...cmsPromotion.card1, tag: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card1 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Title</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card1?.title || ''}
+                          onChange={(e) => {
+                            const card1 = { ...cmsPromotion.card1, title: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card1 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Description</label>
+                      <textarea
+                        value={cmsPromotion.card1?.description || ''}
+                        onChange={(e) => {
+                          const card1 = { ...cmsPromotion.card1, description: e.target.value };
+                          setCmsPromotion({ ...cmsPromotion, card1 });
+                        }}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        rows={2}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Destination URL / Product Link</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card1?.buttonLink || ''}
+                          onChange={(e) => {
+                            const card1 = { ...cmsPromotion.card1, buttonLink: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card1 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Background Image URL</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card1?.backgroundImage || ''}
+                          onChange={(e) => {
+                            const card1 = { ...cmsPromotion.card1, backgroundImage: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card1 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2 (Right Card) */}
+                  <div className="space-y-4">
+                    <span className="font-bold text-xs uppercase tracking-wider text-primary">Right Promotion Card (Card 2)</span>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Tag/Category Banner</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card2?.tag || ''}
+                          onChange={(e) => {
+                            const card2 = { ...cmsPromotion.card2, tag: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card2 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Title</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card2?.title || ''}
+                          onChange={(e) => {
+                            const card2 = { ...cmsPromotion.card2, title: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card2 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Description</label>
+                      <textarea
+                        value={cmsPromotion.card2?.description || ''}
+                        onChange={(e) => {
+                          const card2 = { ...cmsPromotion.card2, description: e.target.value };
+                          setCmsPromotion({ ...cmsPromotion, card2 });
+                        }}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        rows={2}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Destination URL / Product Link</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card2?.buttonLink || ''}
+                          onChange={(e) => {
+                            const card2 = { ...cmsPromotion.card2, buttonLink: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card2 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Background Image URL</label>
+                        <input
+                          type="text"
+                          value={cmsPromotion.card2?.backgroundImage || ''}
+                          onChange={(e) => {
+                            const card2 = { ...cmsPromotion.card2, backgroundImage: e.target.value };
+                            setCmsPromotion({ ...cmsPromotion, card2 });
+                          }}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save Promotion CMS Config
                   </button>
                 </form>
               )}

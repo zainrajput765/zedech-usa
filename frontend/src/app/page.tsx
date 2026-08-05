@@ -94,6 +94,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<any[]>(FALLBACK_PRODUCTS);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [promoData, setPromoData] = useState<any>(null);
 
   // Auto slide effect
   useEffect(() => {
@@ -117,6 +118,16 @@ export default function HomePage() {
         const cmsData = await cmsRes.json();
         if (cmsData.success && cmsData.value?.slides) {
           setHeroData(cmsData.value);
+        }
+
+        try {
+          const promoRes = await fetch(`${API_URL}/cms/homepage_promotion`);
+          const promoData = await promoRes.json();
+          if (promoData.success && promoData.value) {
+            setPromoData(promoData.value);
+          }
+        } catch (err) {
+          console.warn('CMS homepage promotion not found.');
         }
       } catch (err) {
         console.warn('API offline, falling back to static presentation data.');
@@ -331,16 +342,22 @@ export default function HomePage() {
           {/* Box 1 */}
           <div
             className="h-[460px] rounded-3xl bg-cover bg-center relative p-8 flex flex-col justify-end text-white overflow-hidden group shadow-md"
-            style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80)' }}
+            style={{ 
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${promoData?.card1?.backgroundImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'})` 
+            }}
           >
             <div className="space-y-3 z-10">
-              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">Engineering</span>
-              <h3 className="text-2xl font-bold">The Apex Performance Run</h3>
+              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">
+                {promoData?.card1?.tag || 'Engineering'}
+              </span>
+              <h3 className="text-2xl font-bold">
+                {promoData?.card1?.title || 'The Apex Performance Run'}
+              </h3>
               <p className="text-xs text-neutral-200 leading-relaxed font-light max-w-sm">
-                Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.
+                {promoData?.card1?.description || 'Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.'}
               </p>
               <Link
-                href="/product/apex-pro-runner"
+                href={promoData?.card1?.buttonLink || '/product/apex-pro-runner'}
                 className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
               >
                 Learn More <ArrowRight className="w-3.5 h-3.5" />
@@ -351,16 +368,22 @@ export default function HomePage() {
           {/* Box 2 */}
           <div
             className="h-[460px] rounded-3xl bg-cover bg-center relative p-8 flex flex-col justify-end text-white overflow-hidden group shadow-md"
-            style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80)' }}
+            style={{ 
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${promoData?.card2?.backgroundImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80'})` 
+            }}
           >
             <div className="space-y-3 z-10">
-              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">Acoustics</span>
-              <h3 className="text-2xl font-bold">Studio ANC Comfort</h3>
+              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">
+                {promoData?.card2?.tag || 'Acoustics'}
+              </span>
+              <h3 className="text-2xl font-bold">
+                {promoData?.card2?.title || 'Studio ANC Comfort'}
+              </h3>
               <p className="text-xs text-neutral-200 leading-relaxed font-light max-w-sm">
-                Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.
+                {promoData?.card2?.description || 'Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.'}
               </p>
               <Link
-                href="/product/studio-max-anc-headphones"
+                href={promoData?.card2?.buttonLink || '/product/studio-max-anc-headphones'}
                 className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
               >
                 Learn More <ArrowRight className="w-3.5 h-3.5" />
