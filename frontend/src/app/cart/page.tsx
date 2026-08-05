@@ -34,10 +34,11 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState('');
   const [loadingCoupon, setLoadingCoupon] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+  const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
 
-  // Load available coupons on mount
+  // Load available coupons and CMS config on mount
   React.useEffect(() => {
-    const fetchCoupons = async () => {
+    const fetchCouponsData = async () => {
       try {
         const res = await fetch(`${API_URL}/coupons`);
         const data = await res.json();
@@ -47,8 +48,18 @@ export default function CartPage() {
       } catch (err) {
         console.error('Error fetching store coupons', err);
       }
+
+      try {
+        const res = await fetch(`${API_URL}/cms/homepage_coupons`);
+        const data = await res.json();
+        if (data.success) {
+          setCmsCouponsConfig(data.value);
+        }
+      } catch (err) {
+        console.warn('Coupons CMS setting not found. Using default config.');
+      }
     };
-    fetchCoupons();
+    fetchCouponsData();
   }, []);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -253,9 +264,9 @@ export default function CartPage() {
               {couponError && <p className="text-xs text-red-500 font-medium px-1">{couponError}</p>}
 
               {/* Available Coupons list */}
-              {availableCoupons.length > 0 && (
+              {(cmsCouponsConfig?.showCouponsSection ?? true) && availableCoupons.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-border/60">
-                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Available Store Coupons</h4>
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{cmsCouponsConfig?.title || 'Available Store Coupons'}</h4>
                   <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                     {availableCoupons.map((c) => {
                       const isFinished = c.maxUses && c.usedCount >= c.maxUses;

@@ -45,13 +45,53 @@ export const validateCoupon = async (req: Request, res: Response, next: NextFunc
 
 export const getActiveCoupons = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const coupons = await prisma.coupon.findMany({
+    let coupons = await prisma.coupon.findMany({
       where: {
         isActive: true,
         expiryDate: { gte: new Date() }
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    // Self-healing: If there are no active coupons in database, seed default ones automatically!
+    if (coupons.length === 0) {
+      const defaultCoupons = [
+        {
+          code: 'WELCOME10',
+          discountType: 'PERCENTAGE' as any,
+          discountValue: 10,
+          maxUses: 100,
+          usedCount: 0,
+          isActive: true,
+          expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        },
+        {
+          code: 'LUXURY50',
+          discountType: 'FIXED' as any,
+          discountValue: 50,
+          maxUses: 50,
+          usedCount: 0,
+          isActive: true,
+          expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 days
+        }
+      ];
+
+      for (const couponData of defaultCoupons) {
+        await prisma.coupon.upsert({
+          where: { code: couponData.code },
+          update: couponData,
+          create: couponData
+        });
+      }
+
+      coupons = await prisma.coupon.findMany({
+        where: {
+          isActive: true,
+          expiryDate: { gte: new Date() }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
 
     res.status(200).json({
       success: true,

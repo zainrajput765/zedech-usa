@@ -91,6 +91,7 @@ export default function AdminPage() {
   // CMS State
   const [cmsHero, setCmsHero] = useState<any>(null);
   const [cmsPromotion, setCmsPromotion] = useState<any>(null);
+  const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -164,6 +165,18 @@ export default function AdminPage() {
           const promoRes = await fetch(`${API_URL}/cms/homepage_promotion`);
           const promoData = await promoRes.json();
           if (promoData.success) setCmsPromotion(promoData.value);
+
+          try {
+            const couponsConfigRes = await fetch(`${API_URL}/cms/homepage_coupons`);
+            const couponsConfigData = await couponsConfigRes.json();
+            if (couponsConfigData.success) {
+              setCmsCouponsConfig(couponsConfigData.value);
+            } else {
+              setCmsCouponsConfig({ showCouponsSection: true, title: 'Available Store Coupons' });
+            }
+          } catch (e) {
+            setCmsCouponsConfig({ showCouponsSection: true, title: 'Available Store Coupons' });
+          }
         }
 
       } catch (err) {
@@ -410,6 +423,26 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) alert('CMS banner slides saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsCouponsConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/homepage_coupons`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsCouponsConfig })
+      });
+      const data = await res.json();
+      if (data.success) alert('CMS Coupons visibility settings saved successfully!');
     } catch (err) {
       console.error(err);
     }
@@ -1000,6 +1033,40 @@ export default function AdminPage() {
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save CMS Hero Config
+                  </button>
+                </form>
+              )}
+
+              {cmsCouponsConfig && (
+                <form onSubmit={handleUpdateCmsCouponsConfig} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-4 max-w-xl animate-in fade-in zoom-in duration-200">
+                  <h4 className="font-bold text-sm text-foreground border-b border-border pb-2">Coupons Section Visibility Settings</h4>
+                  
+                  <div className="flex items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      id="showCouponsSection"
+                      checked={cmsCouponsConfig.showCouponsSection ?? true}
+                      onChange={(e) => setCmsCouponsConfig({ ...cmsCouponsConfig, showCouponsSection: e.target.checked })}
+                      className="rounded cursor-pointer"
+                    />
+                    <label htmlFor="showCouponsSection" className="text-xs font-semibold text-foreground cursor-pointer">
+                      Display Available Store Coupons Section in Cart Page
+                    </label>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase block">Section Header Title</label>
+                    <input
+                      type="text"
+                      value={cmsCouponsConfig.title || 'Available Store Coupons'}
+                      onChange={(e) => setCmsCouponsConfig({ ...cmsCouponsConfig, title: e.target.value })}
+                      className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save Coupons CMS Config
                   </button>
                 </form>
               )}
