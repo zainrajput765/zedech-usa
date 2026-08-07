@@ -82,7 +82,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     price: number;
   } | null>(null);
 
-  // Load from local storage
+  // Dynamic store tax & shipping parameters from CMS
+  const [taxRate, setTaxRate] = useState<number>(8);
+  const [shippingFee, setShippingFee] = useState<number>(15);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(150);
+
+  // Load from local storage and fetch CMS rules
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
     const savedSaveLater = localStorage.getItem('save_later');
@@ -93,6 +98,22 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     if (savedSaveLater) setSaveForLaterItems(JSON.parse(savedSaveLater));
     if (savedWishlist) setWishlistItems(JSON.parse(savedWishlist));
     if (savedCoupon) setCoupon(JSON.parse(savedCoupon));
+
+    // Fetch dynamic tax & shipping rules from database CMS
+    const fetchPricingRules = async () => {
+      try {
+        const res = await fetch(`${API_URL}/cms/store_pricing_rules`);
+        const data = await res.json();
+        if (data.success && data.value) {
+          setTaxRate(Number(data.value.taxRate) ?? 8);
+          setShippingFee(Number(data.value.shippingFee) ?? 15);
+          setFreeShippingThreshold(Number(data.value.freeShippingThreshold) ?? 150);
+        }
+      } catch (err) {
+        console.warn('Store pricing rules CMS setting not found. Using defaults.');
+      }
+    };
+    fetchPricingRules();
   }, []);
 
   // Auto dismiss toast after 3 seconds
@@ -260,8 +281,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   // --- Calculations ---
 
   const itemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shippingPrice = itemsPrice >= 150 || itemsPrice === 0 ? 0 : 15;
-  const taxPrice = Math.round((itemsPrice * 0.08) * 100) / 100;
+  const shippingPrice = itemsPrice >= freeShippingThreshold || itemsPrice === 0 ? 0 : shippingFee;
+  const taxPrice = Math.round((itemsPrice * (taxRate / 100)) * 100) / 100;
 
   let discountPrice = 0;
   if (coupon) {

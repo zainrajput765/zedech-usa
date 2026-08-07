@@ -92,6 +92,7 @@ export default function AdminPage() {
   const [cmsHero, setCmsHero] = useState<any>(null);
   const [cmsPromotion, setCmsPromotion] = useState<any>(null);
   const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
+  const [cmsPricingRules, setCmsPricingRules] = useState<any>({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -214,6 +215,18 @@ export default function AdminPage() {
             }
           } catch (e) {
             setCmsCouponsConfig({ showCouponsSection: true, title: 'Available Store Coupons' });
+          }
+
+          try {
+            const pricingConfigRes = await fetch(`${API_URL}/cms/store_pricing_rules`);
+            const pricingConfigData = await pricingConfigRes.json();
+            if (pricingConfigData.success) {
+              setCmsPricingRules(pricingConfigData.value);
+            } else {
+              setCmsPricingRules({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
+            }
+          } catch (e) {
+            setCmsPricingRules({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
           }
         }
 
@@ -501,6 +514,26 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) alert('CMS homepage promotion cards saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsPricingRules = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/store_pricing_rules`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsPricingRules })
+      });
+      const data = await res.json();
+      if (data.success) alert('Store Tax & Shipping rules saved successfully!');
     } catch (err) {
       console.error(err);
     }
@@ -1289,6 +1322,54 @@ export default function AdminPage() {
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save Promotion CMS Config
+                  </button>
+                </form>
+              )}
+
+              {cmsPricingRules && (
+                <form onSubmit={handleUpdateCmsPricingRules} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-4 max-w-xl mt-6 animate-in fade-in zoom-in duration-200">
+                  <h4 className="font-bold text-sm text-foreground border-b border-border pb-2">Store Tax & Shipping Rules</h4>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Sales Tax Rate (%)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={cmsPricingRules.taxRate ?? 8}
+                        onChange={(e) => setCmsPricingRules({ ...cmsPricingRules, taxRate: Number(e.target.value) })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Flat Shipping Fee ($)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={cmsPricingRules.shippingFee ?? 15}
+                        onChange={(e) => setCmsPricingRules({ ...cmsPricingRules, shippingFee: Number(e.target.value) })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Free Ship Threshold ($)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={cmsPricingRules.freeShippingThreshold ?? 150}
+                        onChange={(e) => setCmsPricingRules({ ...cmsPricingRules, freeShippingThreshold: Number(e.target.value) })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save Tax & Shipping Rules
                   </button>
                 </form>
               )}
