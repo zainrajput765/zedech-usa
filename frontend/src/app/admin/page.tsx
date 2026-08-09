@@ -96,6 +96,7 @@ export default function AdminPage() {
   const [cmsPromotion, setCmsPromotion] = useState<any>(null);
   const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
   const [cmsPricingRules, setCmsPricingRules] = useState<any>({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
+  const [cmsTestimonials, setCmsTestimonials] = useState<any>({ testimonials: [] });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -242,6 +243,18 @@ export default function AdminPage() {
             }
           } catch (e) {
             setCmsPricingRules({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
+          }
+
+          try {
+            const testConfigRes = await fetch(`${API_URL}/cms/homepage_testimonials`);
+            const testConfigData = await testConfigRes.json();
+            if (testConfigData.success) {
+              setCmsTestimonials(testConfigData.value);
+            } else {
+              setCmsTestimonials({ testimonials: [] });
+            }
+          } catch (e) {
+            setCmsTestimonials({ testimonials: [] });
           }
         }
 
@@ -555,6 +568,26 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) alert('Store Tax & Shipping rules saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsTestimonials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/homepage_testimonials`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsTestimonials })
+      });
+      const data = await res.json();
+      if (data.success) alert('Homepage testimonials saved successfully!');
     } catch (err) {
       console.error(err);
     }
@@ -1380,6 +1413,121 @@ export default function AdminPage() {
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save Tax & Shipping Rules
+                  </button>
+                </form>
+              )}
+
+              {cmsTestimonials && (
+                <form onSubmit={handleUpdateCmsTestimonials} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-6 max-w-xl mt-6 animate-in fade-in zoom-in duration-200">
+                  <div className="flex justify-between items-center border-b border-border pb-2">
+                    <h4 className="font-bold text-sm text-foreground">Customer Endorsements CMS</h4>
+                    <button
+                      type="button"
+                      onClick={() => setCmsTestimonials({
+                        ...cmsTestimonials,
+                        testimonials: [...(cmsTestimonials.testimonials || []), {
+                          name: 'Customer Name',
+                          location: 'Location (e.g. London, UK)',
+                          comment: 'Their review comments...',
+                          rating: 5
+                        }]
+                      })}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded bg-foreground text-background hover:bg-neutral-800 transition-all cursor-pointer"
+                    >
+                      + Add Testimonial
+                    </button>
+                  </div>
+
+                  <div className="space-y-6 max-h-96 overflow-y-auto pr-1">
+                    {(cmsTestimonials.testimonials || []).map((test: any, index: number) => (
+                      <div key={index} className="p-4 border border-border rounded-xl space-y-4 relative bg-background/50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[10px] uppercase tracking-wider text-primary">Testimonial #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const testimonials = [...cmsTestimonials.testimonials];
+                              testimonials.splice(index, 1);
+                              setCmsTestimonials({ ...cmsTestimonials, testimonials });
+                            }}
+                            className="text-[10px] text-red-500 font-bold hover:underline font-semibold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Customer Name</label>
+                            <input
+                              type="text"
+                              value={test.name || ''}
+                              onChange={(e) => {
+                                const testimonials = [...cmsTestimonials.testimonials];
+                                testimonials[index].name = e.target.value;
+                                setCmsTestimonials({ ...cmsTestimonials, testimonials });
+                              }}
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Location</label>
+                            <input
+                              type="text"
+                              value={test.location || ''}
+                              onChange={(e) => {
+                                const testimonials = [...cmsTestimonials.testimonials];
+                                testimonials[index].location = e.target.value;
+                                setCmsTestimonials({ ...cmsTestimonials, testimonials });
+                              }}
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Star Rating (1-5)</label>
+                            <select
+                              value={test.rating || 5}
+                              onChange={(e) => {
+                                const testimonials = [...cmsTestimonials.testimonials];
+                                testimonials[index].rating = Number(e.target.value);
+                                setCmsTestimonials({ ...cmsTestimonials, testimonials });
+                              }}
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            >
+                              <option value="5">5 Stars</option>
+                              <option value="4">4 Stars</option>
+                              <option value="3">3 Stars</option>
+                              <option value="2">2 Stars</option>
+                              <option value="1">1 Star</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Review Comments</label>
+                          <textarea
+                            value={test.comment || ''}
+                            onChange={(e) => {
+                              const testimonials = [...cmsTestimonials.testimonials];
+                              testimonials[index].comment = e.target.value;
+                              setCmsTestimonials({ ...cmsTestimonials, testimonials });
+                            }}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            rows={3}
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save Testimonials CMS Config
                   </button>
                 </form>
               )}

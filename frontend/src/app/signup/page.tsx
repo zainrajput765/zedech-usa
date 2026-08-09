@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
@@ -20,12 +21,70 @@ function SignupContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [customEmail, setCustomEmail] = useState('');
-  const [customName, setCustomName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const handleGoogleLoginSubmit = async (gmail: string, gname: string, gid: string) => {
+    setGoogleLoading(true);
+    setErrorMsg('');
+
+    const res = await googleLogin(gmail, gname, gid);
+    setGoogleLoading(false);
+
+    if (res.success) {
+      router.push(redirect);
+    } else {
+      setErrorMsg('Google authentication failed.');
+    }
+  };
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const initializeGoogleSignIn = () => {
+        if ((window as any).google?.accounts?.id) {
+          (window as any).google.accounts.id.initialize({
+            client_id: '788485292305-jmqc6n33i369u88bce95l2hbfu1q1cbb.apps.googleusercontent.com',
+            callback: (response: any) => {
+              try {
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                  atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+                );
+                const payload = JSON.parse(jsonPayload);
+                if (payload.email) {
+                  handleGoogleLoginSubmit(payload.email, payload.name || 'Google User', payload.sub);
+                }
+              } catch (err) {
+                console.error('Error decoding Google credential', err);
+              }
+            }
+          });
+
+          const btnElem = document.getElementById('google-signin-button');
+          if (btnElem) {
+            (window as any).google.accounts.id.renderButton(btnElem, {
+              theme: 'outline',
+              size: 'large',
+              width: 320,
+              text: 'continue_with'
+            });
+          }
+        }
+      };
+
+      const checkInterval = setInterval(() => {
+        if ((window as any).google?.accounts?.id) {
+          initializeGoogleSignIn();
+          clearInterval(checkInterval);
+        }
+      }, 100);
+      return () => clearInterval(checkInterval);
+    }
+  }, []);
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,23 +107,7 @@ function SignupContent() {
     }
   };
 
-  const handleGoogleLoginSubmit = async (gmail: string, gname: string, gid: string) => {
-    setGoogleLoading(true);
-    setErrorMsg('');
 
-    setTimeout(async () => {
-      const res = await googleLogin(gmail, gname, gid);
-      setGoogleLoading(false);
-
-      if (res.success) {
-        setShowGoogleModal(false);
-        router.push(redirect);
-      } else {
-        setErrorMsg('Google authentication failed.');
-        setShowGoogleModal(false);
-      }
-    }, 1000);
-  };
 
   return (
     <>
@@ -132,20 +175,10 @@ function SignupContent() {
             <div className="flex-1 border-t border-border" />
           </div>
 
-          {/* Google Mock Login CTA */}
-          <button
-            type="button"
-            onClick={() => setShowGoogleModal(true)}
-            className="w-full flex items-center justify-center gap-2 bg-muted hover:bg-border text-foreground font-semibold py-3 rounded-xl transition-all text-xs cursor-pointer"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
-            </svg>
-            Continue with Google
-          </button>
+          {/* Real Google Sign-In Button */}
+          <div className="flex justify-center w-full pt-2">
+            <div id="google-signin-button" className="w-full flex justify-center"></div>
+          </div>
 
           <div className="text-center pt-2">
             <p className="text-xs text-muted-foreground">
@@ -160,129 +193,7 @@ function SignupContent() {
 
       </main>
 
-      {/* Google Modal Overlay */}
-      {showGoogleModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-background border border-border rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-200">
-            
-            {/* Close button */}
-            <button 
-              onClick={() => {
-                setShowGoogleModal(false);
-                setCustomEmail('');
-                setCustomName('');
-                setShowCustomInput(false);
-              }}
-              className="absolute right-4 top-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Logo and Header */}
-            <div className="text-center space-y-2">
-              <div className="flex justify-center">
-                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
-                </svg>
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">Sign in with Google</h2>
-              <p className="text-xs text-muted-foreground">Choose an account to continue to Zedech</p>
-            </div>
-
-            {/* Modal loading */}
-            {googleLoading ? (
-              <div className="flex flex-col items-center justify-center py-10 space-y-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-xs font-semibold text-muted-foreground">Connecting securely...</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                
-                {/* Account Option: Customer */}
-                <button
-                  type="button"
-                  onClick={() => handleGoogleLoginSubmit('customer@zedech.com', 'Zedech Customer', 'google_cust_123')}
-                  className="w-full text-left px-4 py-3 rounded-2xl border border-border hover:bg-muted flex items-center gap-3 transition-colors text-xs font-semibold cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-                    ZC
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-foreground truncate font-bold">Zedech Customer</p>
-                    <p className="text-[10px] text-muted-foreground truncate">customer@zedech.com</p>
-                  </div>
-                </button>
-
-                {/* Account Option: Admin */}
-                <button
-                  type="button"
-                  onClick={() => handleGoogleLoginSubmit('admin@zedech.com', 'Zedech Admin', 'google_adm_123')}
-                  className="w-full text-left px-4 py-3 rounded-2xl border border-border hover:bg-muted flex items-center gap-3 transition-colors text-xs font-semibold cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold shrink-0">
-                    ZA
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-foreground truncate font-bold">Zedech Admin</p>
-                    <p className="text-[10px] text-muted-foreground truncate">admin@zedech.com</p>
-                  </div>
-                </button>
-
-                {/* Custom Account Toggle */}
-                {!showCustomInput ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomInput(true)}
-                    className="w-full text-center py-2.5 rounded-2xl border border-dashed border-border hover:bg-muted text-[11px] font-bold text-muted-foreground transition-all cursor-pointer"
-                  >
-                    + Use another account
-                  </button>
-                ) : (
-                  <div className="p-3 bg-muted/30 border border-border rounded-2xl space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Name</label>
-                      <input
-                        type="text"
-                        value={customName}
-                        onChange={(e) => setCustomName(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Email Address</label>
-                      <input
-                        type="email"
-                        value={customEmail}
-                        onChange={(e) => setCustomEmail(e.target.value)}
-                        placeholder="john.doe@gmail.com"
-                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (customEmail && customName) {
-                          handleGoogleLoginSubmit(customEmail, customName, `google_cust_${Date.now()}`);
-                        }
-                      }}
-                      className="w-full bg-foreground text-background text-xs font-bold py-2 rounded-xl hover:bg-neutral-800 transition-colors cursor-pointer"
-                    >
-                      Sign In
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       <Footer />
     </>
   );

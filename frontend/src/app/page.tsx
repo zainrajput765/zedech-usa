@@ -95,6 +95,7 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [promoData, setPromoData] = useState<any>(null);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
 
   // Auto slide effect
   useEffect(() => {
@@ -128,6 +129,16 @@ export default function HomePage() {
           }
         } catch (err) {
           console.warn('CMS homepage promotion not found.');
+        }
+
+        try {
+          const testRes = await fetch(`${API_URL}/cms/homepage_testimonials`);
+          const testData = await testRes.json();
+          if (testData.success && testData.value?.testimonials) {
+            setTestimonials(testData.value.testimonials);
+          }
+        } catch (err) {
+          console.warn('CMS testimonials not found.');
         }
       } catch (err) {
         console.warn('API offline, falling back to static presentation data.');
@@ -398,52 +409,61 @@ export default function HomePage() {
         })()}
 
         {/* Testimonials */}
-        <section className="bg-muted py-16 transition-colors duration-200">
-          <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
-            <div>
-              <span className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Endorsements</span>
-              <h2 className="text-2xl font-bold mt-1">What our customers say</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 bg-background rounded-2xl border border-border shadow-sm text-left space-y-4">
-                <div className="flex space-x-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 stroke-none" />)}
-                </div>
-                <p className="text-sm text-muted-foreground italic">
-                  "The quality of the wool trench coat is phenomenal. It fits perfectly, feels heavy and luxurious, and has that beautiful Zara structure. Absolute masterpiece."
-                </p>
+        {(() => {
+          const fallbackTestimonials = [
+            {
+              name: 'Marcus Vance',
+              location: 'New York, NY',
+              comment: 'The quality of the wool trench coat is phenomenal. It fits perfectly, feels heavy and luxurious, and has that beautiful Zara structure. Absolute masterpiece.',
+              rating: 5
+            },
+            {
+              name: 'Sarah Jenkins',
+              location: 'San Francisco, CA',
+              comment: 'These headphones have changed my remote office life. The noise cancellation completely silences construction noise from outside. Soundstage is wide and detailed.',
+              rating: 5
+            },
+            {
+              name: 'David Choi',
+              location: 'Chicago, IL',
+              comment: 'Sleekest, most minimal wallet I have owned. Hands down. Craftsmanship is top tier, leather has developed a beautiful dark patina after just a month.',
+              rating: 5
+            }
+          ];
+          const activeTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
+          const gridColsClass = activeTestimonials.length === 1 
+            ? 'grid-cols-1 max-w-3xl mx-auto' 
+            : activeTestimonials.length === 2 
+              ? 'grid-cols-1 md:grid-cols-2' 
+              : 'grid-cols-1 md:grid-cols-3';
+
+          return (
+            <section className="bg-muted py-16 transition-colors duration-200">
+              <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
                 <div>
-                  <h4 className="text-sm font-bold">Marcus Vance</h4>
-                  <p className="text-xs text-muted-foreground">New York, NY</p>
+                  <span className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Endorsements</span>
+                  <h2 className="text-2xl font-bold mt-1">What our customers say</h2>
+                </div>
+                <div className={`grid gap-8 ${gridColsClass}`}>
+                  {activeTestimonials.map((t: any, idx: number) => (
+                    <div key={idx} className="p-8 bg-background rounded-2xl border border-border shadow-sm text-left space-y-4">
+                      <div className="flex space-x-1">
+                        {[...Array(t.rating || 5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 stroke-none" />)}
+                      </div>
+                      <p className="text-sm text-muted-foreground italic">
+                        "{t.comment}"
+                      </p>
+                      <div>
+                        <h4 className="text-sm font-bold">{t.name}</h4>
+                        <p className="text-xs text-muted-foreground">{t.location}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="p-8 bg-background rounded-2xl border border-border shadow-sm text-left space-y-4">
-                <div className="flex space-x-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 stroke-none" />)}
-                </div>
-                <p className="text-sm text-muted-foreground italic">
-                  "These headphones have changed my remote office life. The noise cancellation completely silences construction noise from outside. Soundstage is wide and detailed."
-                </p>
-                <div>
-                  <h4 className="text-sm font-bold">Sarah Jenkins</h4>
-                  <p className="text-xs text-muted-foreground">San Francisco, CA</p>
-                </div>
-              </div>
-              <div className="p-8 bg-background rounded-2xl border border-border shadow-sm text-left space-y-4">
-                <div className="flex space-x-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 stroke-none" />)}
-                </div>
-                <p className="text-sm text-muted-foreground italic">
-                  "Sleekest, most minimal wallet I have owned. Hands down. Craftsmanship is top tier, leather has developed a beautiful dark patina after just a month."
-                </p>
-                <div>
-                  <h4 className="text-sm font-bold">David Choi</h4>
-                  <p className="text-xs text-muted-foreground">Chicago, IL</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
+          );
+        })()}
 
       </main>
       <Footer />
