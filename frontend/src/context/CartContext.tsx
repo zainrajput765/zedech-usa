@@ -15,6 +15,8 @@ export interface CartItem {
   image: string;
   slug: string;
   countInStock: number;
+  shippingPrice?: number;
+  taxRate?: number;
 }
 
 export interface WishlistItem {
@@ -247,6 +249,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       image: item.image,
       slug: item.slug,
       countInStock: 10,
+      shippingPrice: 0,
+      taxRate: 0,
     });
   };
 
@@ -281,8 +285,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   // --- Calculations ---
 
   const itemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shippingPrice = itemsPrice >= freeShippingThreshold || itemsPrice === 0 ? 0 : shippingFee;
-  const taxPrice = Math.round((itemsPrice * (taxRate / 100)) * 100) / 100;
+
+  // Sum product-specific shipping prices. If any items have custom shippingPrice, we sum them.
+  // Otherwise, if total custom shipping is 0, we fall back to the global shipping rules.
+  const totalCustomShipping = cartItems.reduce((acc, item) => acc + (item.shippingPrice ?? 0) * item.quantity, 0);
+  const shippingPrice = totalCustomShipping > 0 
+    ? totalCustomShipping 
+    : (itemsPrice >= freeShippingThreshold || itemsPrice === 0 ? 0 : shippingFee);
+
+  // Apply product-specific tax rate if set (>0), else default to global taxRate.
+  const taxPrice = Math.round(cartItems.reduce((acc, item) => {
+    const rate = (item.taxRate !== undefined && item.taxRate !== null && item.taxRate > 0) ? item.taxRate : taxRate;
+    return acc + (item.price * item.quantity * (rate / 100));
+  }, 0) * 100) / 100;
 
   let discountPrice = 0;
   if (coupon) {

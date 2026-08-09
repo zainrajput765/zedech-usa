@@ -532,6 +532,8 @@ function ShopContent() {
                               image: product.images[0],
                               slug: product.slug,
                               countInStock: product.countInStock || 10,
+                              shippingPrice: product.shippingPrice ?? 0,
+                              taxRate: product.taxRate ?? 0,
                             })}
                             className="flex-1 bg-foreground text-background text-xs font-semibold py-2 rounded-lg hover:bg-neutral-800 transition-colors"
                           >

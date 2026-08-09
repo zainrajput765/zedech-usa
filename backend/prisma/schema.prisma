@@ -109,6 +109,8 @@ model Product {
   isNew          Boolean     @default(false)
   isBestSeller   Boolean     @default(false)
   isTrending     Boolean     @default(false)
+  shippingPrice  Float?      @default(0.0)
+  taxRate        Float?      @default(0.0)
   tags           String[]
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt

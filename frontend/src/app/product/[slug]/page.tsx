@@ -125,6 +125,8 @@ export default function ProductDetailsPage() {
       image: product.images[0],
       slug: product.slug,
       countInStock: product.countInStock,
+      shippingPrice: product.shippingPrice ?? 0,
+      taxRate: product.taxRate ?? 0,
     }, 1);
 
     // Add frequently bought bundle items
@@ -138,6 +140,8 @@ export default function ProductDetailsPage() {
         image: item.images[0],
         slug: item.slug,
         countInStock: 10,
+        shippingPrice: item.shippingPrice ?? 0,
+        taxRate: item.taxRate ?? 0,
       }, 1);
     });
   };
@@ -404,6 +408,8 @@ export default function ProductDetailsPage() {
                   image: product.images[0],
                   slug: product.slug,
                   countInStock: product.countInStock,
+                  shippingPrice: product.shippingPrice ?? 0,
+                  taxRate: product.taxRate ?? 0,
                 }, qty)}
                 disabled={product.countInStock === 0}
                 className="flex-1 bg-foreground text-background font-bold py-3.5 rounded-xl hover:bg-neutral-800 disabled:opacity-40 shadow-lg shadow-black/5 transition-all text-sm"

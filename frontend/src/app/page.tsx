@@ -316,6 +316,8 @@ export default function HomePage() {
                           image: product.images[0],
                           slug: product.slug,
                           countInStock: product.countInStock || 10,
+                          shippingPrice: product.shippingPrice ?? 0,
+                          taxRate: product.taxRate ?? 0,
                         })}
                         className="flex-1 bg-foreground text-background text-xs font-semibold py-2 rounded-lg hover:bg-neutral-800 transition-colors"
                       >
@@ -337,60 +339,63 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Editorial Promotion Banners (Apple / Nike Inspired) */}
-        <section className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Box 1 */}
-          <div
-            className="h-[460px] rounded-3xl bg-cover bg-center relative p-8 flex flex-col justify-end text-white overflow-hidden group shadow-md"
-            style={{ 
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${promoData?.card1?.backgroundImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'})` 
-            }}
-          >
-            <div className="space-y-3 z-10">
-              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">
-                {promoData?.card1?.tag || 'Engineering'}
-              </span>
-              <h3 className="text-2xl font-bold">
-                {promoData?.card1?.title || 'The Apex Performance Run'}
-              </h3>
-              <p className="text-xs text-neutral-200 leading-relaxed font-light max-w-sm">
-                {promoData?.card1?.description || 'Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.'}
-              </p>
-              <Link
-                href={promoData?.card1?.buttonLink || '/product/apex-pro-runner'}
-                className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
-              >
-                Learn More <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+        {/* Editorial Promotion Banners (Dynamic) */}
+        {(() => {
+          const fallbackPromoCards = [
+            {
+              tag: 'Engineering',
+              title: 'The Apex Performance Run',
+              description: 'Built with reactive carbon fiber plates and proprietary foam constructs for maximum pacing efficiency.',
+              buttonLink: '/product/apex-pro-runner',
+              backgroundImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'
+            },
+            {
+              tag: 'Acoustics',
+              title: 'Studio ANC Comfort',
+              description: 'Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.',
+              buttonLink: '/product/studio-max-anc-headphones',
+              backgroundImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80'
+            }
+          ];
+          const promoCards = (promoData?.cards && promoData.cards.length > 0) ? promoData.cards : fallbackPromoCards;
+          const gridColsClass = promoCards.length === 1 
+            ? 'grid-cols-1 max-w-3xl mx-auto' 
+            : promoCards.length === 2 
+              ? 'grid-cols-1 md:grid-cols-2' 
+              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
 
-          {/* Box 2 */}
-          <div
-            className="h-[460px] rounded-3xl bg-cover bg-center relative p-8 flex flex-col justify-end text-white overflow-hidden group shadow-md"
-            style={{ 
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${promoData?.card2?.backgroundImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1000&auto=format&fit=crop&q=80'})` 
-            }}
-          >
-            <div className="space-y-3 z-10">
-              <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">
-                {promoData?.card2?.tag || 'Acoustics'}
-              </span>
-              <h3 className="text-2xl font-bold">
-                {promoData?.card2?.title || 'Studio ANC Comfort'}
-              </h3>
-              <p className="text-xs text-neutral-200 leading-relaxed font-light max-w-sm">
-                {promoData?.card2?.description || 'Active noise cancellation technology that isolates ambient frequencies. Hand-cut anodized aluminum cups.'}
-              </p>
-              <Link
-                href={promoData?.card2?.buttonLink || '/product/studio-max-anc-headphones'}
-                className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
-              >
-                Learn More <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </section>
+          return (
+            <section className={`max-w-7xl mx-auto px-6 py-12 grid gap-8 ${gridColsClass}`}>
+              {promoCards.map((card: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="h-[460px] rounded-3xl bg-cover bg-center relative p-8 flex flex-col justify-end text-white overflow-hidden group shadow-md"
+                  style={{ 
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url(${card.backgroundImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1000&auto=format&fit=crop&q=80'})` 
+                  }}
+                >
+                  <div className="space-y-3 z-10">
+                    <span className="text-xs uppercase font-bold tracking-widest text-neutral-300">
+                      {card.tag || 'Offer'}
+                    </span>
+                    <h3 className="text-2xl font-bold">
+                      {card.title}
+                    </h3>
+                    <p className="text-xs text-neutral-200 leading-relaxed font-light max-w-sm">
+                      {card.description}
+                    </p>
+                    <Link
+                      href={card.buttonLink || '/shop'}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
+                    >
+                      Learn More <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </section>
+          );
+        })()}
 
         {/* Testimonials */}
         <section className="bg-muted py-16 transition-colors duration-200">

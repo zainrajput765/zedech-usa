@@ -102,6 +102,8 @@ export const adminAddProduct = async (req: Request, res: Response, next: NextFun
       colors,
       sizes,
       tags,
+      shippingPrice,
+      taxRate,
     } = req.body;
 
     if (!name || !price || !categoryId || !brand || !sku) {
@@ -130,6 +132,8 @@ export const adminAddProduct = async (req: Request, res: Response, next: NextFun
         colors: colors || [],
         sizes: sizes || [],
         tags: tags || [],
+        shippingPrice: shippingPrice !== undefined && shippingPrice !== null ? Number(shippingPrice) : 0,
+        taxRate: taxRate !== undefined && taxRate !== null ? Number(taxRate) : 0,
       },
     });
 
@@ -157,6 +161,8 @@ export const adminEditProduct = async (req: Request, res: Response, next: NextFu
     if (data.price) data.price = Number(data.price);
     if (data.originalPrice) data.originalPrice = Number(data.originalPrice);
     if (data.countInStock) data.countInStock = Number(data.countInStock);
+    if (data.shippingPrice !== undefined) data.shippingPrice = data.shippingPrice !== null ? Number(data.shippingPrice) : null;
+    if (data.taxRate !== undefined) data.taxRate = data.taxRate !== null ? Number(data.taxRate) : null;
 
     const updated = await prisma.product.update({
       where: { id },
