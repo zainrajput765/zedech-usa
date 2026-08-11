@@ -19,8 +19,22 @@ export const createCheckoutPaymentIntent = async (req: AuthenticatedRequest, res
       if (!product) {
         return next(new AppError(`Product not found: ${item.name}`, 404));
       }
-      if (product.countInStock < item.quantity) {
-        return next(new AppError(`Insufficient stock for: ${product.name}`, 400));
+      if (product.variationStock) {
+        const variants = product.variationStock as any[];
+        const variant = variants.find((v: any) =>
+          (v.color || '') === (item.color || '') &&
+          (v.size || '') === (item.size || '')
+        );
+        if (!variant) {
+          return next(new AppError(`Selected variation not found for product: ${product.name}`, 400));
+        }
+        if (variant.countInStock < item.quantity) {
+          return next(new AppError(`Insufficient stock for variation: ${product.name} (${item.color || ''} / ${item.size || ''})`, 400));
+        }
+      } else {
+        if (product.countInStock < item.quantity) {
+          return next(new AppError(`Insufficient stock for: ${product.name}`, 400));
+        }
       }
       itemsPrice += product.price * item.quantity;
     }
@@ -102,8 +116,22 @@ export const placeOrder = async (req: AuthenticatedRequest, res: Response, next:
         return next(new AppError(`Product not found: ${item.name}`, 404));
       }
 
-      if (product.countInStock < item.quantity) {
-        return next(new AppError(`Insufficient stock for ${product.name}`, 400));
+      if (product.variationStock) {
+        const variants = product.variationStock as any[];
+        const variant = variants.find((v: any) =>
+          (v.color || '') === (item.color || '') &&
+          (v.size || '') === (item.size || '')
+        );
+        if (!variant) {
+          return next(new AppError(`Selected variation not found for product: ${product.name}`, 400));
+        }
+        if (variant.countInStock < item.quantity) {
+          return next(new AppError(`Insufficient stock for variation: ${product.name} (${item.color || ''} / ${item.size || ''})`, 400));
+        }
+      } else {
+        if (product.countInStock < item.quantity) {
+          return next(new AppError(`Insufficient stock for ${product.name}`, 400));
+        }
       }
 
       itemsPrice += product.price * item.quantity;
@@ -173,17 +201,45 @@ export const placeOrder = async (req: AuthenticatedRequest, res: Response, next:
 
       // Deduct inventory
       for (const item of orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            countInStock: {
-              decrement: item.quantity,
+        const product = await tx.product.findUnique({ where: { id: item.productId } });
+        if (!product) {
+          throw new AppError(`Product not found during checkout: ${item.productId}`, 404);
+        }
+
+        if (product.variationStock) {
+          const variants = [...(product.variationStock as any[])];
+          const variantIdx = variants.findIndex((v: any) =>
+            (v.color || '') === (item.color || '') &&
+            (v.size || '') === (item.size || '')
+          );
+          if (variantIdx !== -1) {
+            variants[variantIdx].countInStock = Math.max(0, variants[variantIdx].countInStock - item.quantity);
+          }
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              variationStock: variants,
+              countInStock: {
+                decrement: item.quantity,
+              },
+              isBestSeller: {
+                set: true,
+              },
             },
-            isBestSeller: {
-              set: true, // auto-flag as best seller upon order placements
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              countInStock: {
+                decrement: item.quantity,
+              },
+              isBestSeller: {
+                set: true,
+              },
             },
-          },
-        });
+          });
+        }
       }
 
       // Update coupon count
@@ -308,14 +364,35 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response, next
 
       // Restore product stock
       for (const item of order.orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            countInStock: {
-              increment: item.quantity,
+        const product = await tx.product.findUnique({ where: { id: item.productId } });
+        if (product && product.variationStock) {
+          const variants = [...(product.variationStock as any[])];
+          const variantIdx = variants.findIndex((v: any) =>
+            (v.color || '') === (item.color || '') &&
+            (v.size || '') === (item.size || '')
+          );
+          if (variantIdx !== -1) {
+            variants[variantIdx].countInStock += item.quantity;
+          }
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              variationStock: variants,
+              countInStock: {
+                increment: item.quantity,
+              },
             },
-          },
-        });
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              countInStock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
       }
     });
 

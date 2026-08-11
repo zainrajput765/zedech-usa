@@ -73,6 +73,27 @@ export default function ProductDetailsPage() {
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  const getSelectedVariationStock = () => {
+    if (!product) return 0;
+    if (product.variationStock && product.variationStock.length > 0) {
+      const variant = product.variationStock.find((v: any) =>
+        (v.color || '') === (selectedColor || '') &&
+        (v.size || '') === (selectedSize || '')
+      );
+      return variant ? variant.countInStock : 0;
+    }
+    return product.countInStock;
+  };
+
+  useEffect(() => {
+    const stock = getSelectedVariationStock();
+    if (stock > 0 && qty > stock) {
+      setQty(stock);
+    } else if (stock === 0) {
+      setQty(1);
+    }
+  }, [selectedColor, selectedSize, product, qty]);
+
   // Review states
   const [newRating, setNewRating] = useState(5);
   const [newTitle, setNewTitle] = useState('');
@@ -361,9 +382,9 @@ export default function ProductDetailsPage() {
             <div className="flex items-center gap-6 pt-2">
               <div className="space-y-1">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Stock Status</h4>
-                {product.countInStock > 0 ? (
+                {getSelectedVariationStock() > 0 ? (
                   <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full inline-block">
-                    In Stock (Only {product.countInStock} left)
+                    In Stock (Only {getSelectedVariationStock()} left)
                   </span>
                 ) : (
                   <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full inline-block">
@@ -372,7 +393,7 @@ export default function ProductDetailsPage() {
                 )}
               </div>
 
-              {product.countInStock > 0 && (
+              {getSelectedVariationStock() > 0 && (
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quantity</h4>
                   <div className="flex items-center border border-border rounded-lg bg-card max-w-[120px]">
@@ -385,8 +406,8 @@ export default function ProductDetailsPage() {
                     </button>
                     <span className="flex-1 text-center text-sm font-bold">{qty}</span>
                     <button
-                      onClick={() => setQty((prev) => Math.min(product.countInStock, prev + 1))}
-                      disabled={qty >= product.countInStock}
+                      onClick={() => setQty((prev) => Math.min(getSelectedVariationStock(), prev + 1))}
+                      disabled={qty >= getSelectedVariationStock()}
                       className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-35"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -407,11 +428,11 @@ export default function ProductDetailsPage() {
                   size: selectedSize,
                   image: product.images[0],
                   slug: product.slug,
-                  countInStock: product.countInStock,
+                  countInStock: getSelectedVariationStock(),
                   shippingPrice: product.shippingPrice ?? 0,
                   taxRate: product.taxRate ?? 0,
                 }, qty)}
-                disabled={product.countInStock === 0}
+                disabled={getSelectedVariationStock() === 0}
                 className="flex-1 bg-foreground text-background font-bold py-3.5 rounded-xl hover:bg-neutral-800 disabled:opacity-40 shadow-lg shadow-black/5 transition-all text-sm"
               >
                 Add {qty} Item{qty > 1 ? 's' : ''} to Cart

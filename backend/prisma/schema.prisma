@@ -112,6 +112,7 @@ model Product {
   shippingPrice  Float?      @default(0.0)
   taxRate        Float?      @default(0.0)
   tags           String[]
+  variationStock Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   orderItems     OrderItem[]

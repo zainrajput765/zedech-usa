@@ -72,6 +72,7 @@ export default function AdminPage() {
   const [prodImages, setProdImages] = useState<string[]>(['']);
   const [prodColors, setProdColors] = useState('');
   const [prodSizes, setProdSizes] = useState('');
+  const [prodVariationStock, setProdVariationStock] = useState<any[]>([]);
   const [prodShippingPrice, setProdShippingPrice] = useState('');
   const [prodTaxRate, setProdTaxRate] = useState('');
 
@@ -272,6 +273,55 @@ export default function AdminPage() {
 
   // --- Product Actions ---
 
+  const getCombinations = () => {
+    const cols = prodColors.trim() ? prodColors.split(',').map(c => c.trim()).filter(c => c !== '') : [];
+    const szs = prodSizes.trim() ? prodSizes.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+    
+    if (cols.length === 0 && szs.length === 0) return [];
+    
+    const combs: Array<{ color?: string; size?: string }> = [];
+    if (cols.length > 0 && szs.length > 0) {
+      for (const c of cols) {
+        for (const s of szs) {
+          combs.push({ color: c, size: s });
+        }
+      }
+    } else if (cols.length > 0) {
+      for (const c of cols) {
+        combs.push({ color: c });
+      }
+    } else if (szs.length > 0) {
+      for (const s of szs) {
+        combs.push({ size: s });
+      }
+    }
+    return combs;
+  };
+
+  const handleVarStockChange = (color: string | undefined, size: string | undefined, stockStr: string) => {
+    const stockVal = Number(stockStr) || 0;
+    const existingIdx = prodVariationStock.findIndex(v => 
+      (v.color || '') === (color || '') &&
+      (v.size || '') === (size || '')
+    );
+    
+    let newVarStock = [...prodVariationStock];
+    if (existingIdx !== -1) {
+      newVarStock[existingIdx] = { ...newVarStock[existingIdx], countInStock: stockVal };
+    } else {
+      newVarStock.push({ color, size, countInStock: stockVal });
+    }
+    setProdVariationStock(newVarStock);
+  };
+
+  const getVarStockValue = (color: string | undefined, size: string | undefined) => {
+    const match = prodVariationStock.find(v => 
+      (v.color || '') === (color || '') &&
+      (v.size || '') === (size || '')
+    );
+    return match ? match.countInStock.toString() : '0';
+  };
+
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setProdName('');
@@ -285,6 +335,7 @@ export default function AdminPage() {
     setProdImages(['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600']);
     setProdColors('');
     setProdSizes('');
+    setProdVariationStock([]);
     setProdShippingPrice('0');
     setProdTaxRate('0');
     setShowProductModal(true);
@@ -303,6 +354,7 @@ export default function AdminPage() {
     setProdImages(prod.images && prod.images.length > 0 ? prod.images : ['']);
     setProdColors(prod.colors ? prod.colors.filter((c: string) => c !== 'Default').join(', ') : '');
     setProdSizes(prod.sizes ? prod.sizes.filter((s: string) => s !== 'One Size').join(', ') : '');
+    setProdVariationStock(prod.variationStock || []);
     setProdShippingPrice(prod.shippingPrice !== undefined && prod.shippingPrice !== null ? prod.shippingPrice.toString() : '0');
     setProdTaxRate(prod.taxRate !== undefined && prod.taxRate !== null ? prod.taxRate.toString() : '0');
     setShowProductModal(true);
@@ -312,18 +364,34 @@ export default function AdminPage() {
     e.preventDefault();
     if (!token) return;
 
+    const combinations = getCombinations();
+    const totalStock = combinations.reduce((sum, c) => {
+      const stock = prodVariationStock.find(v => 
+        (v.color || '') === (c.color || '') &&
+        (v.size || '') === (c.size || '')
+      );
+      return sum + (stock ? stock.countInStock : 0);
+    }, 0);
+
     const payload = {
       name: prodName,
       price: Number(prodPrice),
       originalPrice: prodOrigPrice ? Number(prodOrigPrice) : null,
       sku: prodSku,
       brand: prodBrand,
-      countInStock: Number(prodStock),
+      countInStock: combinations.length > 0 ? totalStock : Number(prodStock),
       categoryId: prodCategory,
       description: prodDesc,
       images: prodImages.filter(img => img.trim() !== ''),
       colors: prodColors.trim() ? prodColors.split(',').map(c => c.trim()).filter(c => c !== '') : [],
       sizes: prodSizes.trim() ? prodSizes.split(',').map(s => s.trim()).filter(s => s !== '') : [],
+      variationStock: combinations.length > 0 
+        ? combinations.map(c => ({
+            color: c.color || null,
+            size: c.size || null,
+            countInStock: Number(getVarStockValue(c.color, c.size)) || 0
+          }))
+        : null,
       tags: [prodBrand.toLowerCase(), 'item'],
       shippingPrice: prodShippingPrice !== '' ? Number(prodShippingPrice) : 0,
       taxRate: prodTaxRate !== '' ? Number(prodTaxRate) : 0,
@@ -773,7 +841,20 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-muted-foreground uppercase block">Inventory Stock</label>
-                      <input type="number" value={prodStock} onChange={(e) => setProdStock(e.target.value)} className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs" required />
+                      <input
+                        type="number"
+                        value={getCombinations().length > 0 ? getCombinations().reduce((sum, c) => {
+                          const stock = prodVariationStock.find(v => 
+                            (v.color || '') === (c.color || '') &&
+                            (v.size || '') === (c.size || '')
+                          );
+                          return sum + (stock ? stock.countInStock : 0);
+                        }, 0) : prodStock}
+                        onChange={(e) => setProdStock(e.target.value)}
+                        disabled={getCombinations().length > 0}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs disabled:opacity-75 disabled:bg-muted"
+                        required
+                      />
                     </div>
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
@@ -946,6 +1027,29 @@ export default function AdminPage() {
                         className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs"
                       />
                     </div>
+                    {getCombinations().length > 0 && (
+                      <div className="space-y-2 sm:col-span-2 border-t border-border pt-4">
+                        <label className="text-xs font-bold text-muted-foreground uppercase block">Stock Per Variation Combination</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1">
+                          {getCombinations().map((comb, index) => {
+                            const label = [comb.color, comb.size].filter(Boolean).join(' / ');
+                            return (
+                              <div key={index} className="flex justify-between items-center gap-2 bg-muted/40 p-2 rounded-xl border border-border">
+                                <span className="text-xs font-semibold text-foreground truncate">{label}</span>
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  value={getVarStockValue(comb.color, comb.size)}
+                                  onChange={(e) => handleVarStockChange(comb.color, comb.size, e.target.value)}
+                                  className="w-20 bg-background border border-border px-2 py-1 rounded-lg text-xs text-center font-bold"
+                                  min="0"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     <div className="space-y-1 sm:col-span-2">
                       <label className="text-xs font-bold text-muted-foreground uppercase block">Description</label>
                       <textarea rows={3} value={prodDesc} onChange={(e) => setProdDesc(e.target.value)} className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs" required />
