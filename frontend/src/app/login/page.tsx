@@ -41,7 +41,7 @@ function LoginContent() {
       const initializeGoogleSignIn = () => {
         if ((window as any).google?.accounts?.id) {
           (window as any).google.accounts.id.initialize({
-            client_id: '788485292305-jmqc6n33i369u88bce95l2hbfu1q1cbb.apps.googleusercontent.com',
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '788485292305-jmqc6n33i369u88bce95l2hbfu1q1cbb.apps.googleusercontent.com',
             callback: (response: any) => {
               try {
                 const base64Url = response.credential.split('.')[1];
