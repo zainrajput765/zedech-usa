@@ -653,7 +653,11 @@ Thank you for shopping with Zedech!
                               <div className="min-w-0">
                                 <h5 className="font-bold text-xs truncate">{item.name}</h5>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  Size: {item.size || 'One Size'} / Color: {item.color || 'Default'} &times; {item.quantity}
+                                  {item.size && item.size !== 'One Size' ? `Size: ${item.size}` : ''}
+                                  {item.size && item.size !== 'One Size' && item.color && item.color !== 'Default' ? ' / ' : ''}
+                                  {item.color && item.color !== 'Default' ? `Color: ${item.color}` : ''}
+                                  {((item.size && item.size !== 'One Size') || (item.color && item.color !== 'Default')) ? ' ' : ''}
+                                  &times; {item.quantity}
                                 </p>
                               </div>
                             </div>

@@ -435,7 +435,14 @@ export default function CheckoutPage() {
                       <img src={item.image} alt="" className="w-8 h-8 rounded object-cover bg-muted border border-border" />
                       <div className="truncate">
                         <p className="font-bold truncate">{item.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{item.color} / {item.size} &times; {item.quantity}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {item.color || item.size ? (
+                            <>
+                              {item.color}{item.color && item.size ? ' / ' : ''}{item.size}{' '}
+                            </>
+                          ) : null}
+                          &times; {item.quantity}
+                        </p>
                       </div>
                     </div>
                     <span className="font-bold text-foreground shrink-0">{formatPrice(item.price * item.quantity)}</span>

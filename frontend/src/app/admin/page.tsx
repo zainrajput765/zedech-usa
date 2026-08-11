@@ -70,6 +70,8 @@ export default function AdminPage() {
   const [prodCategory, setProdCategory] = useState('');
   const [prodDesc, setProdDesc] = useState('');
   const [prodImages, setProdImages] = useState<string[]>(['']);
+  const [prodColors, setProdColors] = useState('');
+  const [prodSizes, setProdSizes] = useState('');
   const [prodShippingPrice, setProdShippingPrice] = useState('');
   const [prodTaxRate, setProdTaxRate] = useState('');
 
@@ -281,6 +283,8 @@ export default function AdminPage() {
     setProdCategory(categories[0]?.id || '');
     setProdDesc('');
     setProdImages(['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600']);
+    setProdColors('');
+    setProdSizes('');
     setProdShippingPrice('0');
     setProdTaxRate('0');
     setShowProductModal(true);
@@ -297,6 +301,8 @@ export default function AdminPage() {
     setProdCategory(prod.categoryId);
     setProdDesc(prod.description);
     setProdImages(prod.images && prod.images.length > 0 ? prod.images : ['']);
+    setProdColors(prod.colors ? prod.colors.filter((c: string) => c !== 'Default').join(', ') : '');
+    setProdSizes(prod.sizes ? prod.sizes.filter((s: string) => s !== 'One Size').join(', ') : '');
     setProdShippingPrice(prod.shippingPrice !== undefined && prod.shippingPrice !== null ? prod.shippingPrice.toString() : '0');
     setProdTaxRate(prod.taxRate !== undefined && prod.taxRate !== null ? prod.taxRate.toString() : '0');
     setShowProductModal(true);
@@ -316,8 +322,8 @@ export default function AdminPage() {
       categoryId: prodCategory,
       description: prodDesc,
       images: prodImages.filter(img => img.trim() !== ''),
-      colors: ['Default'],
-      sizes: ['One Size'],
+      colors: prodColors.trim() ? prodColors.split(',').map(c => c.trim()).filter(c => c !== '') : [],
+      sizes: prodSizes.trim() ? prodSizes.split(',').map(s => s.trim()).filter(s => s !== '') : [],
       tags: [prodBrand.toLowerCase(), 'item'],
       shippingPrice: prodShippingPrice !== '' ? Number(prodShippingPrice) : 0,
       taxRate: prodTaxRate !== '' ? Number(prodTaxRate) : 0,
@@ -920,6 +926,26 @@ export default function AdminPage() {
                         className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs"
                       />
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-muted-foreground uppercase block">Colors Variation (comma separated)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Red, Blue, Green (optional)"
+                        value={prodColors}
+                        onChange={(e) => setProdColors(e.target.value)}
+                        className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-muted-foreground uppercase block">Sizes Variation (comma separated)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. S, M, L, XL (optional)"
+                        value={prodSizes}
+                        onChange={(e) => setProdSizes(e.target.value)}
+                        className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs"
+                      />
+                    </div>
                     <div className="space-y-1 sm:col-span-2">
                       <label className="text-xs font-bold text-muted-foreground uppercase block">Description</label>
                       <textarea rows={3} value={prodDesc} onChange={(e) => setProdDesc(e.target.value)} className="w-full bg-background border border-border px-3.5 py-2 rounded-lg text-xs" required />
@@ -977,6 +1003,8 @@ export default function AdminPage() {
                   <thead>
                     <tr className="border-b border-border text-muted-foreground font-bold">
                       <th className="py-2.5">ID</th>
+                      <th className="py-2.5">Customer</th>
+                      <th className="py-2.5">Items Ordered</th>
                       <th className="py-2.5">Date</th>
                       <th className="py-2.5">Total</th>
                       <th className="py-2.5">Status</th>
@@ -986,12 +1014,33 @@ export default function AdminPage() {
                   <tbody className="divide-y divide-border">
                     {orders.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-4 text-center text-muted-foreground">No orders logged.</td>
+                        <td colSpan={7} className="py-4 text-center text-muted-foreground">No orders logged.</td>
                       </tr>
                     ) : (
                       orders.map((o) => (
                         <tr key={o.id} className="hover:bg-muted/30">
                           <td className="py-3.5 font-mono">{o.id.substring(0, 8)}</td>
+                          <td className="py-3.5">
+                            <div className="font-semibold text-foreground">{o.user?.name || 'Guest'}</div>
+                            <div className="text-[10px] text-muted-foreground">{o.user?.email}</div>
+                          </td>
+                          <td className="py-3.5">
+                            <div className="space-y-1 max-w-[300px]">
+                              {o.orderItems?.map((item: any) => (
+                                <div key={item.id} className="text-[11px] leading-tight">
+                                  <span className="font-semibold">{item.name}</span>
+                                  <span className="text-muted-foreground font-medium"> &times; {item.quantity}</span>
+                                  {(item.color || item.size) && (
+                                    <span className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-1.5 inline-block">
+                                      {item.color ? `Col: ${item.color}` : ''}
+                                      {item.color && item.size ? ' | ' : ''}
+                                      {item.size ? `Sz: ${item.size}` : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
                           <td className="py-3.5 text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</td>
                           <td className="py-3.5 font-semibold">{formatPrice(o.totalPrice)}</td>
                           <td className="py-3.5">

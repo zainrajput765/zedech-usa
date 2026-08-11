@@ -203,6 +203,7 @@ export const adminGetOrders = async (req: Request, res: Response, next: NextFunc
     const orders = await prisma.order.findMany({
       include: {
         user: { select: { name: true, email: true } },
+        orderItems: true,
       },
       orderBy: { createdAt: 'desc' },
     });

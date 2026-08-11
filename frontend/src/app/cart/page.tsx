@@ -127,7 +127,17 @@ export default function CartPage() {
                           </Link>
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Size: <span className="text-foreground font-medium">{item.size}</span> / Color: <span className="text-foreground font-medium">{item.color}</span>
+                          {item.size && (
+                            <>
+                              Size: <span className="text-foreground font-medium">{item.size}</span>
+                            </>
+                          )}
+                          {item.size && item.color && <span> / </span>}
+                          {item.color && (
+                            <>
+                              Color: <span className="text-foreground font-medium">{item.color}</span>
+                            </>
+                          )}
                         </p>
                         
                         <div className="flex items-center space-x-4 mt-3">

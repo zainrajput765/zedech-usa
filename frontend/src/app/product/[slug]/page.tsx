@@ -90,21 +90,21 @@ export default function ProductDetailsPage() {
           setProduct(data.product);
           setFrequentlyBought(data.frequentlyBoughtTogether || []);
           setActiveImage(data.product.images[0]);
-          setSelectedColor(data.product.colors[0] || 'Default');
-          setSelectedSize(data.product.sizes[0] || 'One Size');
+           setSelectedColor(data.product.colors && data.product.colors.length > 0 ? data.product.colors[0] : '');
+          setSelectedSize(data.product.sizes && data.product.sizes.length > 0 ? data.product.sizes[0] : '');
         } else {
           setProduct(MOCK_PRODUCT);
           setActiveImage(MOCK_PRODUCT.images[0]);
-          setSelectedColor(MOCK_PRODUCT.colors[0]);
-          setSelectedSize(MOCK_PRODUCT.sizes[0]);
+          setSelectedColor(MOCK_PRODUCT.colors && MOCK_PRODUCT.colors.length > 0 ? MOCK_PRODUCT.colors[0] : '');
+          setSelectedSize(MOCK_PRODUCT.sizes && MOCK_PRODUCT.sizes.length > 0 ? MOCK_PRODUCT.sizes[0] : '');
         }
       } catch (err) {
         console.warn('API details offline, loading simulated product mock.');
         // Match mock by slug
         setProduct(MOCK_PRODUCT);
         setActiveImage(MOCK_PRODUCT.images[0]);
-        setSelectedColor(MOCK_PRODUCT.colors[0]);
-        setSelectedSize(MOCK_PRODUCT.sizes[0]);
+        setSelectedColor(MOCK_PRODUCT.colors && MOCK_PRODUCT.colors.length > 0 ? MOCK_PRODUCT.colors[0] : '');
+        setSelectedSize(MOCK_PRODUCT.sizes && MOCK_PRODUCT.sizes.length > 0 ? MOCK_PRODUCT.sizes[0] : '');
       } finally {
         setLoading(false);
       }
