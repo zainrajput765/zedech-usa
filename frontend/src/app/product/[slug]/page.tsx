@@ -442,7 +442,13 @@ export default function ProductDetailsPage() {
             <div className="border-t border-border pt-6 flex flex-col gap-2.5 text-xs text-muted-foreground font-semibold">
               <p>SKU: <span className="text-foreground">{product.sku}</span></p>
               <p>Brand: <span className="text-foreground">{product.brand}</span></p>
-              <p>Complimentary 3-5 business day delivery.</p>
+              {product.shippingPrice !== undefined && product.shippingPrice !== null && (
+                <p>Shipping Fee: <span className="text-foreground">{product.shippingPrice === 0 ? 'Free' : `$${product.shippingPrice}`}</span></p>
+              )}
+              {product.taxRate !== undefined && product.taxRate !== null && product.taxRate > 0 && (
+                <p>Estimated Tax: <span className="text-foreground">{product.taxRate}%</span></p>
+              )}
+              <p>Estimated 3-5 business day delivery.</p>
             </div>
           </div>
         </div>

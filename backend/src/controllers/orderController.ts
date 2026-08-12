@@ -39,8 +39,22 @@ export const createCheckoutPaymentIntent = async (req: AuthenticatedRequest, res
       itemsPrice += product.price * item.quantity;
     }
 
-    const shippingPrice = itemsPrice >= 150 ? 0 : 15;
-    const taxPrice = Math.round((itemsPrice * 0.08) * 100) / 100; // 8% sales tax
+    // Retrieve store pricing rules from CMS
+    const pricingRulesSetting = await prisma.cMSSetting.findUnique({
+      where: { key: 'store_pricing_rules' }
+    });
+    let taxRate = 8;
+    let shippingFee = 15;
+    let freeShippingThreshold = 150;
+    if (pricingRulesSetting && pricingRulesSetting.value) {
+      const rules = pricingRulesSetting.value as any;
+      taxRate = Number(rules.taxRate) ?? 8;
+      shippingFee = Number(rules.shippingFee) ?? 15;
+      freeShippingThreshold = Number(rules.freeShippingThreshold) ?? 150;
+    }
+
+    const shippingPrice = itemsPrice >= freeShippingThreshold ? 0 : shippingFee;
+    const taxPrice = Math.round((itemsPrice * (taxRate / 100)) * 100) / 100;
 
     let discountPrice = 0;
     if (couponCode) {
@@ -147,8 +161,22 @@ export const placeOrder = async (req: AuthenticatedRequest, res: Response, next:
       });
     }
 
-    const shippingPrice = itemsPrice >= 150 ? 0 : 15;
-    const taxPrice = Math.round((itemsPrice * 0.08) * 100) / 100;
+    // Retrieve store pricing rules from CMS
+    const pricingRulesSetting = await prisma.cMSSetting.findUnique({
+      where: { key: 'store_pricing_rules' }
+    });
+    let taxRate = 8;
+    let shippingFee = 15;
+    let freeShippingThreshold = 150;
+    if (pricingRulesSetting && pricingRulesSetting.value) {
+      const rules = pricingRulesSetting.value as any;
+      taxRate = Number(rules.taxRate) ?? 8;
+      shippingFee = Number(rules.shippingFee) ?? 15;
+      freeShippingThreshold = Number(rules.freeShippingThreshold) ?? 150;
+    }
+
+    const shippingPrice = itemsPrice >= freeShippingThreshold ? 0 : shippingFee;
+    const taxPrice = Math.round((itemsPrice * (taxRate / 100)) * 100) / 100;
 
     let discountPrice = 0;
     let couponToUpdate = null;
