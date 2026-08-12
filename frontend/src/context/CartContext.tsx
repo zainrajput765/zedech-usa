@@ -39,6 +39,7 @@ interface CartContextType {
   wishlistItems: WishlistItem[];
   coupon: CouponData | null;
   couponError: string | null;
+  availableCoupons: any[];
   
   // Cart operations
   addToCart: (item: Omit<CartItem, 'quantity'>, qty?: number) => void;
@@ -77,6 +78,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
   const [activeToast, setActiveToast] = useState<{
     id: string;
     name: string;
@@ -115,7 +117,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         console.warn('Store pricing rules CMS setting not found. Using defaults.');
       }
     };
+
+    const fetchActiveCoupons = async () => {
+      try {
+        const res = await fetch(`${API_URL}/coupons`);
+        const data = await res.json();
+        if (data.success) {
+          setAvailableCoupons(data.coupons || []);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch coupons list.');
+      }
+    };
+
     fetchPricingRules();
+    fetchActiveCoupons();
   }, []);
 
   // Auto dismiss toast after 3 seconds
@@ -313,6 +329,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         wishlistItems,
         coupon,
         couponError,
+        availableCoupons,
         addToCart,
         removeFromCart,
         updateQuantity,

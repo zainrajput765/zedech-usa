@@ -18,6 +18,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     saveForLaterItems,
     coupon,
     couponError,
+    availableCoupons,
     removeFromCart,
     updateQuantity,
     saveForLater,
@@ -260,6 +261,26 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   </form>
                 )}
                 {couponError && <p className="text-xs text-red-500 font-medium px-1">{couponError}</p>}
+
+                {/* Available Coupons list */}
+                {!coupon && availableCoupons && availableCoupons.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Available Coupons (Click to apply)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableCoupons.map((c: any) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => applyCouponCode(c.code)}
+                          className="inline-flex items-center gap-1 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 hover:bg-indigo-500/25 text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Tag className="w-2.5 h-2.5" />
+                          {c.code} ({c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `$${c.discountValue}`} off)
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Summary breakdown */}
                 <div className="space-y-2.5 text-sm pt-2">

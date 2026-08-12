@@ -16,6 +16,7 @@ export default function CartPage() {
     saveForLaterItems,
     coupon,
     couponError,
+    availableCoupons,
     removeFromCart,
     updateQuantity,
     saveForLater,
@@ -33,22 +34,11 @@ export default function CartPage() {
   const { formatPrice } = useCurrency();
   const [couponInput, setCouponInput] = useState('');
   const [loadingCoupon, setLoadingCoupon] = useState(false);
-  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
   const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
 
-  // Load available coupons and CMS config on mount
+  // Load CMS config on mount
   React.useEffect(() => {
     const fetchCouponsData = async () => {
-      try {
-        const res = await fetch(`${API_URL}/coupons`);
-        const data = await res.json();
-        if (data.success) {
-          setAvailableCoupons(data.coupons || []);
-        }
-      } catch (err) {
-        console.error('Error fetching store coupons', err);
-      }
-
       try {
         const res = await fetch(`${API_URL}/cms/homepage_coupons`);
         const data = await res.json();

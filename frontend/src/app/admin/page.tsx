@@ -232,6 +232,14 @@ export default function AdminPage() {
             } else {
               setCmsCouponsConfig({ showCouponsSection: true, title: 'Available Store Coupons' });
             }
+
+            const couponsRes = await fetch(`${API_URL}/admin/coupons`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const couponsData = await couponsRes.json();
+            if (couponsData.success) {
+              setCoupons(couponsData.coupons);
+            }
           } catch (e) {
             setCmsCouponsConfig({ showCouponsSection: true, title: 'Available Store Coupons' });
           }
@@ -1388,6 +1396,35 @@ export default function AdminPage() {
                       className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
                       required
                     />
+                  </div>
+
+                  {/* Active Coupons overview list */}
+                  <div className="space-y-2 border-t border-border pt-4">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase block">Available Discount Coupons (Created in Coupons tab)</label>
+                    {coupons.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">No coupons created yet. Create some in the "Coupons" tab.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto pr-1">
+                        {coupons.map((c: any) => {
+                          const isExpired = new Date(c.expiryDate) < new Date();
+                          const isFinished = c.maxUses && c.usedCount >= c.maxUses;
+                          const isInactive = !c.isActive;
+                          return (
+                            <div key={c.id} className="flex justify-between items-center gap-2 p-2 rounded-xl bg-muted/40 border border-border/80 text-xs">
+                              <div>
+                                <span className="font-extrabold text-foreground tracking-tight">{c.code}</span>
+                                <span className="text-[10px] text-muted-foreground ml-2">
+                                  ({c.discountType === 'PERCENTAGE' ? `${c.discountValue}% Off` : `$${c.discountValue} Off`})
+                                </span>
+                              </div>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isExpired || isFinished || isInactive ? 'bg-red-500/10 text-red-600' : 'bg-green-500/10 text-green-600'}`}>
+                                {isInactive ? 'Inactive' : isExpired ? 'Expired' : isFinished ? 'Max Used' : 'Active'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
