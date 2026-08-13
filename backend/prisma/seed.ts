@@ -1,5 +1,6 @@
 import { PrismaClient, Role, DiscountType, OrderStatus, PaymentStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import process from 'process';
 
 const prisma = new PrismaClient();
 
