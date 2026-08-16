@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import Logo from '../components/layout/Logo';
 import { useCurrency } from '../context/CurrencyContext';
 import { useCart } from '../context/CartContext';
 import { ArrowRight, ShoppingBag, Eye, Heart, Star, Shield, HelpCircle, ArrowLeft } from 'lucide-react';
@@ -105,6 +106,18 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [heroData]);
 
+  // Lock body scroll while loading to prevent background scrolling
+  useEffect(() => {
+    if (loading) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [loading]);
+
   // Load products and CMS
   useEffect(() => {
     const loadData = async () => {
@@ -165,6 +178,60 @@ export default function HomePage() {
 
   return (
     <>
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            key="loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
+          >
+            <div className="flex flex-col items-center space-y-6 text-center max-w-sm px-6">
+              {/* Pulsating logo ring */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.06, 1],
+                }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="relative flex items-center justify-center p-6 rounded-full bg-muted/30 border border-border"
+              >
+                <div className="absolute inset-0 rounded-full border border-t-foreground/30 border-r-transparent border-b-transparent border-l-transparent animate-spin duration-1000" />
+                <Logo className="w-16 h-16 text-foreground" />
+              </motion.div>
+
+              {/* Progress bar loader */}
+              <div className="relative w-40 h-0.5 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ left: "-100%" }}
+                  animate={{ left: "100%" }}
+                  transition={{
+                    duration: 1.4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute top-0 bottom-0 w-1/2 bg-foreground rounded-full"
+                />
+              </div>
+
+              {/* Soft typography message */}
+              <div className="space-y-1">
+                <h3 className="text-xs font-bold tracking-widest uppercase text-foreground">
+                  Zedech
+                </h3>
+                <p className="text-[10px] text-muted-foreground tracking-wide font-light">
+                  Loading minimal luxury...
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Header />
       <main className="flex-1 pb-20">
         
