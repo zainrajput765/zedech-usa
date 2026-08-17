@@ -403,19 +403,70 @@ async function main() {
       key: 'faqs',
       value: [
         {
-          q: 'What is your shipping policy?',
-          a: 'We offer free standard shipping on orders over $150. Expedited shipping is available at checkout for a flat rate of $15. Orders are typically processed within 1-2 business days.'
+          category: 'Shipping',
+          question: 'How long does shipping take?',
+          answer: 'Standard shipping takes 3–5 business days within the continental United States. International orders usually arrive in 7–14 business days. Priority shipping is available at checkout for expedited delivery.'
         },
         {
-          q: 'How do return requests work?',
-          a: 'We accept returns within 30 days of purchase. Items must be in their original packaging, unworn, and with tags attached. You can initiate a return directly from your profile dashboard.'
+          category: 'Shipping',
+          question: 'Do you offer free shipping?',
+          answer: 'Yes! We offer free complimentary standard shipping on all orders over $150. For orders under $150, a standard shipping fee of $15 applies.'
         },
         {
-          q: 'Are payments secure?',
-          a: 'Yes. We use industry-standard encryption and securely process payments directly through Stripe and PayPal. We do not store your credit card details on our servers.'
+          category: 'Returns',
+          question: 'What is your return policy?',
+          answer: 'We accept returns on all unworn, unused items with original tags intact within 30 days of purchase. Returns can be easily initiated from your user profile order history panel.'
+        },
+        {
+          category: 'Returns',
+          question: 'Are returns free?',
+          answer: 'Yes. Once a return request is approved in your profile, we generate a pre-paid courier shipping label for you to print and attach to your package.'
+        },
+        {
+          category: 'Products',
+          question: 'Are your items authentic?',
+          answer: 'Absolutely. We design, manufacture, and sell all products directly. We do not source from third-party resellers, ensuring that every product you buy is 100% authentic and covered under our manufacturer warranty.'
+        },
+        {
+          category: 'Payments',
+          question: 'What payment methods do you accept?',
+          answer: 'We accept all major credit cards (Visa, Mastercard, American Express), Apple Pay, Google Pay, and PayPal.'
         }
       ]
     },
+  });
+
+  await prisma.cMSSetting.create({
+    data: {
+      key: 'our_story',
+      value: {
+        title: 'Redefining Minimal Luxury',
+        subtitle: 'We believe that products should be designed to last, executed with architectural precision, and stripped of unnecessary noise.',
+        image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+        visionTitle: 'The Vision',
+        visionText: 'Zedech was founded in 2026 out of a frustration with hyper-disposable fashion and tech. We set out to build an ecosystem of premium goods that integrate seamlessly into modern workspaces and lifestyles. We source high-grade sustainable materials and utilize precise, low-waste manufacturing processes.',
+        craftTitle: 'The Craftsmanship',
+        craftText: 'Every curve, thread, and interface is scrutinized in our design labs. From carbon-fiber plate integration in our athletic footwear to the sound acoustics in our active noise-canceling headphones, we blend engineering with premium aesthetics to deliver functional art.',
+        pillarsTitle: 'Our Core Pillars',
+        pillars: [
+          {
+            emoji: '📐',
+            title: 'Architectural Design',
+            description: 'Stripped back layouts, harmonious geometries, and intuitive ergonomics guide every collection.'
+          },
+          {
+            emoji: '🔋',
+            title: 'Optimal Performance',
+            description: 'Whether it is speed on the track or clarity in high-definition audio, output is never compromised.'
+          },
+          {
+            emoji: '🌍',
+            title: 'Ethical Development',
+            description: 'Sourcing materials from carbon-neutral suppliers and prioritizing fair labor conditions globally.'
+          }
+        ]
+      }
+    }
   });
 
   console.log('Created CMS settings.');

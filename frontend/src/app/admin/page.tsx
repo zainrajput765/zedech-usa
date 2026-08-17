@@ -100,6 +100,8 @@ export default function AdminPage() {
   const [cmsCouponsConfig, setCmsCouponsConfig] = useState<any>({ showCouponsSection: true, title: 'Available Store Coupons' });
   const [cmsPricingRules, setCmsPricingRules] = useState<any>({ taxRate: 8, shippingFee: 15, freeShippingThreshold: 150 });
   const [cmsTestimonials, setCmsTestimonials] = useState<any>({ testimonials: [] });
+  const [cmsOurStory, setCmsOurStory] = useState<any>(null);
+  const [cmsFaqs, setCmsFaqs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -266,6 +268,26 @@ export default function AdminPage() {
             }
           } catch (e) {
             setCmsTestimonials({ testimonials: [] });
+          }
+
+          try {
+            const storyRes = await fetch(`${API_URL}/cms/our_story`);
+            const storyData = await storyRes.json();
+            if (storyData.success && storyData.value) {
+              setCmsOurStory(storyData.value);
+            }
+          } catch (e) {
+            console.warn('Failed to fetch Our Story config', e);
+          }
+
+          try {
+            const faqsRes = await fetch(`${API_URL}/cms/faqs`);
+            const faqsData = await faqsRes.json();
+            if (faqsData.success && Array.isArray(faqsData.value)) {
+              setCmsFaqs(faqsData.value);
+            }
+          } catch (e) {
+            console.warn('Failed to fetch FAQs config', e);
           }
         }
 
@@ -670,6 +692,46 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) alert('Homepage testimonials saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsOurStory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !cmsOurStory) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/our_story`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsOurStory })
+      });
+      const data = await res.json();
+      if (data.success) alert('Our Story settings saved successfully!');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateCmsFaqs = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !cmsFaqs) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/cms/faqs`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ value: cmsFaqs })
+      });
+      const data = await res.json();
+      if (data.success) alert('FAQs saved successfully!');
     } catch (err) {
       console.error(err);
     }
@@ -1718,6 +1780,258 @@ export default function AdminPage() {
 
                   <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
                     Save Testimonials CMS Config
+                  </button>
+                </form>
+              )}
+
+              {cmsOurStory && (
+                <form onSubmit={handleUpdateCmsOurStory} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-6 max-w-xl mt-6 animate-in fade-in zoom-in duration-200">
+                  <h4 className="font-bold text-sm text-foreground border-b border-border pb-2">Our Story Page CMS</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Hero Title</label>
+                      <input
+                        type="text"
+                        value={cmsOurStory.title || ''}
+                        onChange={(e) => setCmsOurStory({ ...cmsOurStory, title: e.target.value })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Hero Subtitle</label>
+                      <textarea
+                        value={cmsOurStory.subtitle || ''}
+                        onChange={(e) => setCmsOurStory({ ...cmsOurStory, subtitle: e.target.value })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        rows={2}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Hero Banner Image URL</label>
+                      <input
+                        type="text"
+                        value={cmsOurStory.image || ''}
+                        onChange={(e) => setCmsOurStory({ ...cmsOurStory, image: e.target.value })}
+                        className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border pt-4">
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Vision Title</label>
+                          <input
+                            type="text"
+                            value={cmsOurStory.visionTitle || ''}
+                            onChange={(e) => setCmsOurStory({ ...cmsOurStory, visionTitle: e.target.value })}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Vision Description</label>
+                          <textarea
+                            value={cmsOurStory.visionText || ''}
+                            onChange={(e) => setCmsOurStory({ ...cmsOurStory, visionText: e.target.value })}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs font-light"
+                            rows={4}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Craftsmanship Title</label>
+                          <input
+                            type="text"
+                            value={cmsOurStory.craftTitle || ''}
+                            onChange={(e) => setCmsOurStory({ ...cmsOurStory, craftTitle: e.target.value })}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase block">Craftsmanship Description</label>
+                          <textarea
+                            value={cmsOurStory.craftText || ''}
+                            onChange={(e) => setCmsOurStory({ ...cmsOurStory, craftText: e.target.value })}
+                            className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs font-light"
+                            rows={4}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">Pillars Section Header</label>
+                        <input
+                          type="text"
+                          value={cmsOurStory.pillarsTitle || ''}
+                          onChange={(e) => setCmsOurStory({ ...cmsOurStory, pillarsTitle: e.target.value })}
+                          className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                          required
+                        />
+                      </div>
+
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase block">Core Pillars (3 items)</label>
+                      <div className="grid grid-cols-1 gap-4">
+                        {(cmsOurStory.pillars || []).map((pillar: any, index: number) => (
+                          <div key={index} className="p-3 border border-border rounded-xl space-y-2.5 bg-background">
+                            <span className="font-bold text-[9px] uppercase tracking-wider text-muted-foreground">Pillar #{index + 1}</span>
+                            <div className="grid grid-cols-4 gap-2">
+                              <div className="space-y-1 col-span-1">
+                                <label className="text-[9px] font-bold text-muted-foreground uppercase block">Emoji</label>
+                                <input
+                                  type="text"
+                                  value={pillar.emoji || ''}
+                                  onChange={(e) => {
+                                    const pillars = [...cmsOurStory.pillars];
+                                    pillars[index].emoji = e.target.value;
+                                    setCmsOurStory({ ...cmsOurStory, pillars });
+                                  }}
+                                  className="w-full bg-background border border-border px-2 py-1 rounded text-center text-xs"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-1 col-span-3">
+                                <label className="text-[9px] font-bold text-muted-foreground uppercase block">Pillar Title</label>
+                                <input
+                                  type="text"
+                                  value={pillar.title || ''}
+                                  onChange={(e) => {
+                                    const pillars = [...cmsOurStory.pillars];
+                                    pillars[index].title = e.target.value;
+                                    setCmsOurStory({ ...cmsOurStory, pillars });
+                                  }}
+                                  className="w-full bg-background border border-border px-3 py-1 rounded text-xs"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-muted-foreground uppercase block">Description</label>
+                              <input
+                                type="text"
+                                value={pillar.description || ''}
+                                onChange={(e) => {
+                                    const pillars = [...cmsOurStory.pillars];
+                                    pillars[index].description = e.target.value;
+                                    setCmsOurStory({ ...cmsOurStory, pillars });
+                                }}
+                                className="w-full bg-background border border-border px-3 py-1 rounded text-xs font-light"
+                                required
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save Our Story CMS Config
+                  </button>
+                </form>
+              )}
+
+              {cmsFaqs && (
+                <form onSubmit={handleUpdateCmsFaqs} className="p-6 border border-border rounded-2xl bg-card shadow-sm space-y-6 max-w-xl mt-6 animate-in fade-in zoom-in duration-200">
+                  <div className="flex justify-between items-center border-b border-border pb-2">
+                    <h4 className="font-bold text-sm text-foreground">Frequently Asked Questions CMS</h4>
+                    <button
+                      type="button"
+                      onClick={() => setCmsFaqs([
+                        ...cmsFaqs,
+                        {
+                          category: 'General',
+                          question: 'Enter the question text here?',
+                          answer: 'Enter the corresponding answer here.'
+                        }
+                      ])}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded bg-foreground text-background hover:bg-neutral-800 transition-all cursor-pointer"
+                    >
+                      + Add FAQ Item
+                    </button>
+                  </div>
+
+                  <div className="space-y-6 max-h-96 overflow-y-auto pr-1">
+                    {cmsFaqs.map((faq: any, index: number) => (
+                      <div key={index} className="p-4 border border-border rounded-xl space-y-4 relative bg-background/50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[10px] uppercase tracking-wider text-primary">FAQ Item #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedFaqs = [...cmsFaqs];
+                              updatedFaqs.splice(index, 1);
+                              setCmsFaqs(updatedFaqs);
+                            }}
+                            className="text-[10px] text-red-500 font-bold hover:underline font-semibold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Category</label>
+                            <input
+                              type="text"
+                              value={faq.category || ''}
+                              onChange={(e) => {
+                                const updatedFaqs = [...cmsFaqs];
+                                updatedFaqs[index].category = e.target.value;
+                                setCmsFaqs(updatedFaqs);
+                              }}
+                              placeholder="e.g. Shipping, Returns, Payments"
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs"
+                              required
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Question Text</label>
+                            <input
+                              type="text"
+                              value={faq.question || ''}
+                              onChange={(e) => {
+                                const updatedFaqs = [...cmsFaqs];
+                                updatedFaqs[index].question = e.target.value;
+                                setCmsFaqs(updatedFaqs);
+                              }}
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs font-semibold"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase block">Answer Text</label>
+                            <textarea
+                              value={faq.answer || ''}
+                              onChange={(e) => {
+                                const updatedFaqs = [...cmsFaqs];
+                                updatedFaqs[index].answer = e.target.value;
+                                setCmsFaqs(updatedFaqs);
+                              }}
+                              className="w-full bg-background border border-border px-3 py-1.5 rounded-lg text-xs font-light"
+                              rows={3}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button type="submit" className="w-full bg-foreground text-background text-xs font-bold py-2.5 rounded-xl hover:bg-neutral-800 transition-all cursor-pointer">
+                    Save FAQs Config
                   </button>
                 </form>
               )}
